@@ -1,0 +1,53 @@
+spring:
+  application:
+    name: student-management-api
+  datasource:
+    url: jdbc:postgresql://localhost:5432/student_management_db
+    username: postgres
+    password: ${DB_PASSWORD:Piseth1711*#}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+server:
+  port: 8080
+security:
+  jwt:
+    private-key-path: private.pem
+    public-key-path: public.pem
+    issuer: student-management-api
+    expiration-seconds: 3600
+    refresh-expiration-seconds: 604800
+logging:
+  file:
+    name: logs/student-management-api.log
+  level:
+    root: INFO
+    com.acleda.training.studentmanagement: INFO
+  logback:
+    rollingpolicy:
+      file-name-pattern: logs/archive/student-management-api-%d{yyyy-MM-dd}.%i.log
+      max-file-size: 10MB
+      max-history: 30
+      total-size-cap: 1GB
+third-party:
+  json-placeholder:
+    base-url: https://jsonplaceholder.typicode.com
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+    persist-authorization: false
+scalar:
+  enabled: true
+  path: /scalar
+  url: /v3/api-docs
