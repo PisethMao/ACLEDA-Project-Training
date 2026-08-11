@@ -1,6 +1,6 @@
 package com.acleda.training.studentmanagement.features.student;
 
-import com.acleda.training.studentmanagement.exception.ApiErrorResponse;
+import com.acleda.training.studentmanagement.exception.ApiResponse;
 import com.acleda.training.studentmanagement.exception.ResponseUtil;
 import com.acleda.training.studentmanagement.features.student.dto.StudentRequest;
 import com.acleda.training.studentmanagement.features.student.dto.StudentResponse;
@@ -36,7 +36,7 @@ public class StudentController {
             description = "Creates a new student"
     )
     @PostMapping
-    public ResponseEntity<ApiErrorResponse<StudentResponse>> createStudent(
+    public ResponseEntity<ApiResponse<StudentResponse>> createStudent(
             @Valid
             @RequestBody
             StudentRequest request,
@@ -59,7 +59,7 @@ public class StudentController {
             description = "Retrieves students with pagination and sorting"
     )
     @GetMapping
-    public ResponseEntity<ApiErrorResponse<Page<StudentResponse>>> getStudents(
+    public ResponseEntity<ApiResponse<Page<StudentResponse>>> getStudents(
             @ParameterObject
             @PageableDefault(
                     sort = "createdAt",
@@ -85,7 +85,7 @@ public class StudentController {
             description = "Retrieves a student by its unique ID"
     )
     @GetMapping("/{studentId}")
-    public ResponseEntity<ApiErrorResponse<StudentResponse>> getStudentById(
+    public ResponseEntity<ApiResponse<StudentResponse>> getStudentById(
             @PathVariable
             UUID studentId,
             HttpServletRequest httpServletRequest
@@ -107,7 +107,7 @@ public class StudentController {
             description = "Updates an existing student. Returns no changes detected when submitted data is unchanged"
     )
     @PutMapping("/{studentId}")
-    public ResponseEntity<ApiErrorResponse<StudentResponse>> updateStudent(
+    public ResponseEntity<ApiResponse<StudentResponse>> updateStudent(
             @PathVariable
             UUID studentId,
             @Valid
@@ -136,7 +136,7 @@ public class StudentController {
             description = "Soft deletes a student by its unique ID"
     )
     @DeleteMapping("/{studentId}")
-    public ResponseEntity<ApiErrorResponse<Void>> deleteStudent(
+    public ResponseEntity<ApiResponse<Void>> deleteStudent(
             @PathVariable
             UUID studentId,
             HttpServletRequest httpServletRequest

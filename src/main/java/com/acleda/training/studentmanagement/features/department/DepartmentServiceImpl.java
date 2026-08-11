@@ -45,12 +45,12 @@ public class DepartmentServiceImpl implements DepartmentService {
             String code,
             String name
     ) {
-        if (departmentRepository.existsByCodeIgnoreCase(code)) {
+        if (departmentRepository.existsByCodeIgnoreCaseAndDeletedFalse(code)) {
             throw new ConflictException(
                     "Department code '" + code + "' already exists"
             );
         }
-        if (departmentRepository.existsByNameIgnoreCase(name)) {
+        if (departmentRepository.existsByNameIgnoreCaseAndDeletedFalse(name)) {
             throw new ConflictException(
                     "Department name '" + name + "' already exists"
             );
@@ -131,7 +131,7 @@ public class DepartmentServiceImpl implements DepartmentService {
             String name
     ) {
         if (departmentRepository
-                .existsByCodeIgnoreCaseAndIdNot(
+                .existsByCodeIgnoreCaseAndDeletedFalseAndIdNot(
                         code,
                         departmentId
                 )) {
@@ -140,7 +140,7 @@ public class DepartmentServiceImpl implements DepartmentService {
             );
         }
         if (departmentRepository
-                .existsByNameIgnoreCaseAndIdNot(
+                .existsByNameIgnoreCaseAndDeletedFalseAndIdNot(
                         name,
                         departmentId
                 )) {

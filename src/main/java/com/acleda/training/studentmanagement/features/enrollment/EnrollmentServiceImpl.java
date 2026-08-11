@@ -121,6 +121,20 @@ public class EnrollmentServiceImpl
                 );
     }
 
+    private Enrollment findEnrollmentById(
+            UUID enrollmentId
+    ) {
+        return enrollmentRepository
+                .findByIdAndDeletedFalse(
+                        enrollmentId
+                )
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Enrollment not found"
+                        )
+                );
+    }
+
     @Override
     @Transactional(readOnly = true)
     public EnrollmentResponse getEnrollmentById(
@@ -272,19 +286,5 @@ public class EnrollmentServiceImpl
         enrollmentRepository.save(
                 enrollment
         );
-    }
-
-    private Enrollment findEnrollmentById(
-            UUID enrollmentId
-    ) {
-        return enrollmentRepository
-                .findByIdAndDeletedFalse(
-                        enrollmentId
-                )
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Enrollment not found"
-                        )
-                );
     }
 }

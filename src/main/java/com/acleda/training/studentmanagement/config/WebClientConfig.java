@@ -11,18 +11,6 @@ import reactor.core.publisher.Mono;
 @Slf4j
 @Configuration
 public class WebClientConfig {
-    @Bean
-    public WebClient jsonPlaceholderWebClient(
-            @Value("${third-party.json-placeholder.base-url}")
-            String baseUrl
-    ) {
-        return WebClient.builder()
-                .baseUrl(baseUrl)
-                .filter(logRequest())
-                .filter(logResponse())
-                .build();
-    }
-
     private ExchangeFilterFunction logRequest() {
         return ExchangeFilterFunction.ofRequestProcessor(
                 request -> {
@@ -46,5 +34,17 @@ public class WebClientConfig {
                     return Mono.just(response);
                 }
         );
+    }
+
+    @Bean
+    public WebClient jsonPlaceholderWebClient(
+            @Value("${third-party.json-placeholder.base-url}")
+            String baseUrl
+    ) {
+        return WebClient.builder()
+                .baseUrl(baseUrl)
+                .filter(logRequest())
+                .filter(logResponse())
+                .build();
     }
 }

@@ -1,6 +1,6 @@
 package com.acleda.training.studentmanagement.features.auth;
 
-import com.acleda.training.studentmanagement.exception.ApiErrorResponse;
+import com.acleda.training.studentmanagement.exception.ApiResponse;
 import com.acleda.training.studentmanagement.exception.ResponseUtil;
 import com.acleda.training.studentmanagement.features.auth.dto.AuthResponse;
 import com.acleda.training.studentmanagement.features.auth.dto.LoginRequest;
@@ -33,7 +33,7 @@ public class AuthController {
             description = "Creates a new user account"
     )
     @PostMapping("/register")
-    public ResponseEntity<ApiErrorResponse<UserResponse>> register(
+    public ResponseEntity<ApiResponse<UserResponse>> register(
             @Valid
             @RequestBody RegisterRequest request,
             HttpServletRequest httpServletRequest
@@ -53,7 +53,7 @@ public class AuthController {
             description = "Authenticates a user and returns access and refresh tokens"
     )
     @PostMapping("/login")
-    public ResponseEntity<ApiErrorResponse<AuthResponse>> login(
+    public ResponseEntity<ApiResponse<AuthResponse>> login(
             @Valid
             @RequestBody LoginRequest request,
             HttpServletRequest httpServletRequest
@@ -73,7 +73,7 @@ public class AuthController {
             description = "Generates a new access token using a valid refresh token"
     )
     @PostMapping("/refresh")
-    public ResponseEntity<ApiErrorResponse<AuthResponse>> refreshToken(
+    public ResponseEntity<ApiResponse<AuthResponse>> refreshToken(
             @Valid
             @RequestBody RefreshTokenRequest request,
             HttpServletRequest httpServletRequest
@@ -96,7 +96,7 @@ public class AuthController {
             )
     )
     @PostMapping("/logout")
-    public ResponseEntity<ApiErrorResponse<Void>> logout(
+    public ResponseEntity<ApiResponse<Void>> logout(
             HttpServletRequest httpServletRequest
     ) {
         String authorizationHeader =

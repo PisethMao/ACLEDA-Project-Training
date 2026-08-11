@@ -2,7 +2,9 @@ package com.acleda.training.studentmanagement.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.InvalidDataAccessResourceUsageException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -22,7 +24,7 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
     @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ApiErrorResponse<Object>> handleNotFound(
+    public ResponseEntity<ApiResponse<Object>> handleNotFound(
             ResourceNotFoundException exception,
             HttpServletRequest request
     ) {
@@ -40,7 +42,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(NoResourceFoundException.class)
-    public ResponseEntity<ApiErrorResponse<Object>> handleEndpointNotFound(
+    public ResponseEntity<ApiResponse<Object>> handleEndpointNotFound(
             NoResourceFoundException exception,
             HttpServletRequest request
     ) {
@@ -61,7 +63,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(BadRequestException.class)
-    public ResponseEntity<ApiErrorResponse<Object>> handleBadRequest(
+    public ResponseEntity<ApiResponse<Object>> handleBadRequest(
             BadRequestException exception,
             HttpServletRequest request
     ) {
@@ -79,7 +81,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiErrorResponse<Map<String, String>>> handleValidation(
+    public ResponseEntity<ApiResponse<Map<String, String>>> handleValidation(
             MethodArgumentNotValidException exception,
             HttpServletRequest request
     ) {
@@ -108,7 +110,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ApiErrorResponse<Object>> handleInvalidJson(
+    public ResponseEntity<ApiResponse<Object>> handleInvalidJson(
             HttpMessageNotReadableException exception,
             HttpServletRequest request
     ) {
@@ -126,7 +128,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    public ResponseEntity<ApiErrorResponse<Object>> handleTypeMismatch(
+    public ResponseEntity<ApiResponse<Object>> handleTypeMismatch(
             MethodArgumentTypeMismatchException exception,
             HttpServletRequest request
     ) {
@@ -157,7 +159,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(HandlerMethodValidationException.class)
-    public ResponseEntity<ApiErrorResponse<Object>> handleParameterValidation(
+    public ResponseEntity<ApiResponse<Object>> handleParameterValidation(
             HandlerMethodValidationException exception,
             HttpServletRequest request
     ) {
@@ -193,7 +195,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(ConflictException.class)
-    public ResponseEntity<ApiErrorResponse<Object>> handleConflict(
+    public ResponseEntity<ApiResponse<Object>> handleConflict(
             ConflictException exception,
             HttpServletRequest request
     ) {
@@ -211,7 +213,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<ApiErrorResponse<Object>> handleDataIntegrityViolation(
+    public ResponseEntity<ApiResponse<Object>> handleDataIntegrityViolation(
             DataIntegrityViolationException exception,
             HttpServletRequest request
     ) {
@@ -229,7 +231,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<ApiErrorResponse<Object>> handleBadCredentials(
+    public ResponseEntity<ApiResponse<Object>> handleBadCredentials(
             BadCredentialsException exception,
             HttpServletRequest request
     ) {
@@ -247,7 +249,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
-    public ResponseEntity<ApiErrorResponse<Object>> handleMethodNotAllowed(
+    public ResponseEntity<ApiResponse<Object>> handleMethodNotAllowed(
             HttpRequestMethodNotSupportedException exception,
             HttpServletRequest request
     ) {
@@ -268,7 +270,8 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiErrorResponse<Object>> handleInternalServerError(
+    public ResponseEntity<ApiResponse<Object>>
+    handleInternalServerError(
             Exception exception,
             HttpServletRequest request
     ) {
@@ -282,13 +285,14 @@ public class GlobalExceptionHandler {
         );
         return ResponseUtil.fail(
                 HttpStatus.INTERNAL_SERVER_ERROR,
-                "An unexpected internal server error occurred",
+                "Internal Server Error",
+                "The server encountered an unexpected error while processing the request.",
                 request.getRequestURI()
         );
     }
 
     @ExceptionHandler(ThirdPartyApiException.class)
-    public ResponseEntity<ApiErrorResponse<Object>>
+    public ResponseEntity<ApiResponse<Object>>
     handleThirdPartyApiException(
             ThirdPartyApiException exception,
             HttpServletRequest request
@@ -300,6 +304,55 @@ public class GlobalExceptionHandler {
         return ResponseUtil.fail(
                 HttpStatus.BAD_GATEWAY,
                 exception.getMessage(),
+                request.getRequestURI()
+        );
+    }
+
+    @ExceptionHandler(InvalidDataAccessResourceUsageException.class)
+    public ResponseEntity<ApiResponse<Object>>
+    handleInvalidDataAccessResourceUsage(
+            InvalidDataAccessResourceUsageException exception,
+            HttpServletRequest request
+    ) {
+        exception.getMostSpecificCause();
+        String technicalMessage =
+                exception.getMostSpecificCause().getMessage();
+        log.error(
+                "DATABASE QUERY ERROR | Method: {} | URI: {} | Message: {}",
+                request.getMethod(),
+                request.getRequestURI(),
+                technicalMessage,
+                exception
+        );
+        return ResponseUtil.fail(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "Database Query Error",
+                "Failed to execute the database query. Check query parameters, field types, or repository query configuration.",
+                request.getRequestURI()
+        );
+    }
+
+    @ExceptionHandler(DataAccessException.class)
+    public ResponseEntity<ApiResponse<Object>>
+    handleDataAccessException(
+            DataAccessException exception,
+            HttpServletRequest request
+    ) {
+        exception.getMostSpecificCause();
+        String technicalMessage =
+                exception.getMostSpecificCause().getMessage();
+        log.error(
+                "DATABASE ERROR | Method: {} | URI: {} | Exception: {} | Message: {}",
+                request.getMethod(),
+                request.getRequestURI(),
+                exception.getClass().getSimpleName(),
+                technicalMessage,
+                exception
+        );
+        return ResponseUtil.fail(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "Database Error",
+                "A database operation could not be completed.",
                 request.getRequestURI()
         );
     }

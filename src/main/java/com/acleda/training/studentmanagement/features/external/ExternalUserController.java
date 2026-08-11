@@ -1,6 +1,6 @@
 package com.acleda.training.studentmanagement.features.external;
 
-import com.acleda.training.studentmanagement.exception.ApiErrorResponse;
+import com.acleda.training.studentmanagement.exception.ApiResponse;
 import com.acleda.training.studentmanagement.exception.ResponseUtil;
 import com.acleda.training.studentmanagement.features.external.dto.ExternalUserResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -32,7 +32,7 @@ public class ExternalUserController {
             description = "Retrieves an external user from a third-party API by user ID"
     )
     @GetMapping("/{userId}")
-    public ResponseEntity<ApiErrorResponse<ExternalUserResponse>>
+    public ResponseEntity<ApiResponse<ExternalUserResponse>>
     getExternalUser(
             @PathVariable
             @Min(

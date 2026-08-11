@@ -1,6 +1,6 @@
 package com.acleda.training.studentmanagement.features.enrollment;
 
-import com.acleda.training.studentmanagement.exception.ApiErrorResponse;
+import com.acleda.training.studentmanagement.exception.ApiResponse;
 import com.acleda.training.studentmanagement.exception.ResponseUtil;
 import com.acleda.training.studentmanagement.features.enrollment.dto.CreateEnrollmentRequest;
 import com.acleda.training.studentmanagement.features.enrollment.dto.EnrollmentResponse;
@@ -37,7 +37,7 @@ public class EnrollmentController {
             description = "Enrolls a student into a course"
     )
     @PostMapping
-    public ResponseEntity<ApiErrorResponse<EnrollmentResponse>>
+    public ResponseEntity<ApiResponse<EnrollmentResponse>>
     createEnrollment(
             @Valid
             @RequestBody
@@ -63,7 +63,7 @@ public class EnrollmentController {
                 """
     )
     @GetMapping
-    public ResponseEntity<ApiErrorResponse<Page<EnrollmentResponse>>>
+    public ResponseEntity<ApiResponse<Page<EnrollmentResponse>>>
     getEnrollments(
             @RequestParam(required = false)
             String keyword,
@@ -108,7 +108,7 @@ public class EnrollmentController {
             description = "Retrieves a specific enrollment"
     )
     @GetMapping("/{enrollmentId}")
-    public ResponseEntity<ApiErrorResponse<EnrollmentResponse>>
+    public ResponseEntity<ApiResponse<EnrollmentResponse>>
     getEnrollmentById(
             @PathVariable
             UUID enrollmentId,
@@ -131,7 +131,7 @@ public class EnrollmentController {
             description = "Updates enrollment information"
     )
     @PutMapping("/{enrollmentId}")
-    public ResponseEntity<ApiErrorResponse<EnrollmentResponse>>
+    public ResponseEntity<ApiResponse<EnrollmentResponse>>
     updateEnrollment(
             @PathVariable
             UUID enrollmentId,
@@ -158,7 +158,7 @@ public class EnrollmentController {
             description = "Updates score, grade, and enrollment status"
     )
     @PatchMapping("/{enrollmentId}/result")
-    public ResponseEntity<ApiErrorResponse<EnrollmentResponse>>
+    public ResponseEntity<ApiResponse<EnrollmentResponse>>
     updateEnrollmentResult(
             @PathVariable
             UUID enrollmentId,
@@ -185,7 +185,7 @@ public class EnrollmentController {
             description = "Soft deletes an enrollment"
     )
     @DeleteMapping("/{enrollmentId}")
-    public ResponseEntity<ApiErrorResponse<Object>>
+    public ResponseEntity<ApiResponse<Object>>
     deleteEnrollment(
             @PathVariable
             UUID enrollmentId,

@@ -1,6 +1,6 @@
 package com.acleda.training.studentmanagement.features.department;
 
-import com.acleda.training.studentmanagement.exception.ApiErrorResponse;
+import com.acleda.training.studentmanagement.exception.ApiResponse;
 import com.acleda.training.studentmanagement.exception.ResponseUtil;
 import com.acleda.training.studentmanagement.features.department.dto.*;
 import io.swagger.v3.oas.annotations.Operation;
@@ -34,7 +34,7 @@ public class DepartmentController {
             description = "Creates a new department"
     )
     @PostMapping
-    public ResponseEntity<ApiErrorResponse<DepartmentResponse>> createDepartment(
+    public ResponseEntity<ApiResponse<DepartmentResponse>> createDepartment(
             @Valid
             @RequestBody
             CreateDepartmentRequest request,
@@ -55,7 +55,7 @@ public class DepartmentController {
             description = "Retrieves departments with optional keyword, status, pagination, and sorting filters"
     )
     @GetMapping
-    public ResponseEntity<ApiErrorResponse<Page<DepartmentResponse>>> getDepartments(
+    public ResponseEntity<ApiResponse<Page<DepartmentResponse>>> getDepartments(
             @RequestParam(required = false)
             String keyword,
             @RequestParam(required = false)
@@ -87,7 +87,7 @@ public class DepartmentController {
             description = "Retrieves a department by its unique ID"
     )
     @GetMapping("/{departmentId}")
-    public ResponseEntity<ApiErrorResponse<DepartmentResponse>> getDepartmentById(
+    public ResponseEntity<ApiResponse<DepartmentResponse>> getDepartmentById(
             @PathVariable
             UUID departmentId,
             HttpServletRequest httpServletRequest
@@ -109,7 +109,7 @@ public class DepartmentController {
             description = "Updates an existing department. Returns no changes detected when submitted data is unchanged"
     )
     @PutMapping("/{departmentId}")
-    public ResponseEntity<ApiErrorResponse<DepartmentResponse>> updateDepartment(
+    public ResponseEntity<ApiResponse<DepartmentResponse>> updateDepartment(
             @PathVariable
             UUID departmentId,
             @Valid
@@ -138,7 +138,7 @@ public class DepartmentController {
             description = "Enables or disables a department by its unique ID"
     )
     @PatchMapping("/{departmentId}/status")
-    public ResponseEntity<ApiErrorResponse<DepartmentResponse>> updateDepartmentStatus(
+    public ResponseEntity<ApiResponse<DepartmentResponse>> updateDepartmentStatus(
             @PathVariable
             UUID departmentId,
             @Valid
@@ -164,7 +164,7 @@ public class DepartmentController {
             description = "Soft deletes a department by its unique ID"
     )
     @DeleteMapping("/{departmentId}")
-    public ResponseEntity<ApiErrorResponse<Void>> deleteDepartment(
+    public ResponseEntity<ApiResponse<Void>> deleteDepartment(
             @PathVariable
             UUID departmentId,
             HttpServletRequest httpServletRequest

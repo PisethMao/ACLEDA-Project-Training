@@ -70,7 +70,8 @@ public class SecurityConfig {
                                 "/api/v1/students/**",
                                 "/api/v1/courses/**",
                                 "/api/v1/external/**",
-                                "/api/v1/enrollments/**"
+                                "/api/v1/enrollments/**",
+                                "/api/v1/instructors/**"
                         )
                         .hasAnyRole(
                                 "USER",
@@ -81,7 +82,8 @@ public class SecurityConfig {
                                 "/api/v1/departments/**",
                                 "/api/v1/students/**",
                                 "/api/v1/courses/**",
-                                "/api/v1/enrollments/**"
+                                "/api/v1/enrollments/**",
+                                "/api/v1/instructors/**"
                         )
                         .hasRole("ADMIN")
                         .requestMatchers(
@@ -89,7 +91,8 @@ public class SecurityConfig {
                                 "/api/v1/departments/**",
                                 "/api/v1/students/**",
                                 "/api/v1/courses/**",
-                                "/api/v1/enrollments/**"
+                                "/api/v1/enrollments/**",
+                                "/api/v1/instructors/**"
                         )
                         .hasRole("ADMIN")
                         .requestMatchers(
@@ -97,7 +100,8 @@ public class SecurityConfig {
                                 "/api/v1/departments/**",
                                 "/api/v1/students/**",
                                 "/api/v1/courses/**",
-                                "/api/v1/enrollments/**"
+                                "/api/v1/enrollments/**",
+                                "/api/v1/instructors/**"
                         )
                         .hasRole("ADMIN")
                         .requestMatchers(
@@ -105,7 +109,8 @@ public class SecurityConfig {
                                 "/api/v1/departments/**",
                                 "/api/v1/students/**",
                                 "/api/v1/courses/**",
-                                "/api/v1/enrollments/**"
+                                "/api/v1/enrollments/**",
+                                "/api/v1/instructors/**"
                         )
                         .hasRole("ADMIN")
                         .anyRequest()

@@ -11,25 +11,24 @@ import java.util.UUID;
 
 public interface DepartmentRepository
         extends JpaRepository<Department, UUID> {
-
     Optional<Department> findByIdAndDeletedFalse(
             UUID id
     );
 
-    boolean existsByCodeIgnoreCase(
+    boolean existsByCodeIgnoreCaseAndDeletedFalse(
             String code
     );
 
-    boolean existsByNameIgnoreCase(
+    boolean existsByNameIgnoreCaseAndDeletedFalse(
             String name
     );
 
-    boolean existsByCodeIgnoreCaseAndIdNot(
+    boolean existsByCodeIgnoreCaseAndDeletedFalseAndIdNot(
             String code,
             UUID id
     );
 
-    boolean existsByNameIgnoreCaseAndIdNot(
+    boolean existsByNameIgnoreCaseAndDeletedFalseAndIdNot(
             String name,
             UUID id
     );
@@ -54,8 +53,10 @@ public interface DepartmentRepository
               )
             """)
     Page<Department> searchDepartments(
-            @Param("keyword") String keyword,
-            @Param("enabled") Boolean enabled,
+            @Param("keyword")
+            String keyword,
+            @Param("enabled")
+            Boolean enabled,
             Pageable pageable
     );
 }

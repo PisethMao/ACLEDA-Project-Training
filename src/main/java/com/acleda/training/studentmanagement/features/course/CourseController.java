@@ -1,6 +1,6 @@
 package com.acleda.training.studentmanagement.features.course;
 
-import com.acleda.training.studentmanagement.exception.ApiErrorResponse;
+import com.acleda.training.studentmanagement.exception.ApiResponse;
 import com.acleda.training.studentmanagement.exception.ResponseUtil;
 import com.acleda.training.studentmanagement.features.course.dto.CourseResponse;
 import com.acleda.training.studentmanagement.features.course.dto.CreateCourseRequest;
@@ -36,7 +36,7 @@ public class CourseController {
             description = "Creates a new course"
     )
     @PostMapping
-    public ResponseEntity<ApiErrorResponse<CourseResponse>>
+    public ResponseEntity<ApiResponse<CourseResponse>>
     createCourse(
             @Valid
             @RequestBody
@@ -60,7 +60,7 @@ public class CourseController {
             description = "Retrieves courses with optional keyword, department, credit, pagination, and sorting filters"
     )
     @GetMapping
-    public ResponseEntity<ApiErrorResponse<Page<CourseResponse>>> getCourses(
+    public ResponseEntity<ApiResponse<Page<CourseResponse>>> getCourses(
             @RequestParam(required = false)
             String keyword,
             @RequestParam(required = false)
@@ -95,7 +95,7 @@ public class CourseController {
             description = "Retrieves a course by its unique ID"
     )
     @GetMapping("/{courseId}")
-    public ResponseEntity<ApiErrorResponse<CourseResponse>>
+    public ResponseEntity<ApiResponse<CourseResponse>>
     getCourseById(
             @PathVariable
             UUID courseId,
@@ -118,7 +118,7 @@ public class CourseController {
             description = "Updates an existing course by its unique ID"
     )
     @PutMapping("/{courseId}")
-    public ResponseEntity<ApiErrorResponse<CourseResponse>>
+    public ResponseEntity<ApiResponse<CourseResponse>>
     updateCourse(
             @PathVariable
             UUID courseId,
@@ -145,7 +145,7 @@ public class CourseController {
             description = "Soft deletes a course by its unique ID"
     )
     @DeleteMapping("/{courseId}")
-    public ResponseEntity<ApiErrorResponse<Object>> deleteCourse(
+    public ResponseEntity<ApiResponse<Object>> deleteCourse(
             @PathVariable
             UUID courseId,
             HttpServletRequest httpServletRequest
