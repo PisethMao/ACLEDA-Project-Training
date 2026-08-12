@@ -11,6 +11,9 @@ import com.acleda.training.studentmanagement.features.enrollment.dto.UpdateEnrol
 import com.acleda.training.studentmanagement.features.student.Student;
 import com.acleda.training.studentmanagement.features.student.StudentRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -30,6 +33,10 @@ public class EnrollmentServiceImpl
     private final EnrollmentMapper enrollmentMapper;
 
     @Override
+    @CachePut(
+            value = "enrollments",
+            key = "#result.id()"
+    )
     public EnrollmentResponse createEnrollment(
             CreateEnrollmentRequest request
     ) {
@@ -137,6 +144,10 @@ public class EnrollmentServiceImpl
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(
+            value = "enrollments",
+            key = "#enrollmentId"
+    )
     public EnrollmentResponse getEnrollmentById(
             UUID enrollmentId
     ) {
@@ -150,6 +161,10 @@ public class EnrollmentServiceImpl
     }
 
     @Override
+    @CachePut(
+            value = "enrollments",
+            key = "#enrollmentId"
+    )
     public EnrollmentResponse updateEnrollment(
             UUID enrollmentId,
             UpdateEnrollmentRequest request
@@ -245,6 +260,10 @@ public class EnrollmentServiceImpl
     }
 
     @Override
+    @CachePut(
+            value = "enrollments",
+            key = "#enrollmentId"
+    )
     public EnrollmentResponse updateEnrollmentResult(
             UUID enrollmentId,
             UpdateEnrollmentResultRequest request
@@ -274,6 +293,10 @@ public class EnrollmentServiceImpl
     }
 
     @Override
+    @CacheEvict(
+            value = "enrollments",
+            key = "#enrollmentId"
+    )
     public void deleteEnrollment(
             UUID enrollmentId
     ) {

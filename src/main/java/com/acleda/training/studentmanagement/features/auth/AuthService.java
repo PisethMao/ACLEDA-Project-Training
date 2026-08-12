@@ -4,6 +4,7 @@ import com.acleda.training.studentmanagement.exception.ConflictException;
 import com.acleda.training.studentmanagement.features.auth.dto.*;
 import io.jsonwebtoken.JwtException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CachePut;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -40,6 +41,10 @@ public class AuthService {
     }
 
     @Transactional
+    @CachePut(
+            value = "register",
+            key = "#result.id()"
+    )
     public UserResponse register(
             RegisterRequest request
     ) {
@@ -55,6 +60,7 @@ public class AuthService {
                             " already exists"
             );
         }
+        // Use By Mapper
         AppUser user =
                 appUserMapper.toEntity(request);
         user.setUsername(username);
@@ -70,9 +76,34 @@ public class AuthService {
                         .saveAndFlush(user);
         return appUserMapper
                 .toResponse(savedUser);
+        // Use By Manual
+//        AppUser user = new AppUser();
+//        user.setUsername(username);
+//        user.setPassword(
+//                passwordEncoder.encode(
+//                        request.password()
+//                )
+//        );
+//        user.setRole(UserRole.USER);
+//        user.setEnabled(true);
+//        AppUser savedUser =
+//                appUserRepository
+//                        .saveAndFlush(user);
+//        return new UserResponse(
+//                savedUser.getId(),
+//                savedUser.getUsername(),
+//                savedUser.getRole(),
+//                savedUser.isEnabled(),
+//                savedUser.getCreatedAt(),
+//                savedUser.getUpdatedAt()
+//        );
     }
 
     @Transactional(readOnly = true)
+    @CachePut(
+            value = "login",
+            key = "#result.username()"
+    )
     public AuthResponse login(
             LoginRequest request
     ) {
@@ -122,6 +153,10 @@ public class AuthService {
     }
 
     @Transactional(readOnly = true)
+    @CachePut(
+            value = "refeshToken",
+            key = "#result.username()"
+    )
     public AuthResponse refreshToken(
             RefreshTokenRequest request
     ) {

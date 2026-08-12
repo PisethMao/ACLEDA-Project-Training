@@ -8,6 +8,9 @@ import com.acleda.training.studentmanagement.features.instructor.dto.CreateInstr
 import com.acleda.training.studentmanagement.features.instructor.dto.InstructorResponse;
 import com.acleda.training.studentmanagement.features.instructor.dto.UpdateInstructorRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -26,6 +29,10 @@ public class InstructorServiceImpl
 
     @Override
     @Transactional
+    @CachePut(
+            value = "instructors",
+            key = "#result.id()"
+    )
     public InstructorResponse createInstructor(
             CreateInstructorRequest request
     ) {
@@ -119,6 +126,10 @@ public class InstructorServiceImpl
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(
+            value = "instructors",
+            key = "#instructorId"
+    )
     public InstructorResponse getInstructorById(
             UUID instructorId
     ) {
@@ -131,8 +142,13 @@ public class InstructorServiceImpl
         );
     }
 
+
     @Override
     @Transactional
+    @CachePut(
+            value = "instructors",
+            key = "#instructorId"
+    )
     public InstructorResponse updateInstructor(
             UUID instructorId,
             UpdateInstructorRequest request
@@ -205,6 +221,10 @@ public class InstructorServiceImpl
 
     @Override
     @Transactional
+    @CacheEvict(
+            value = "instructors",
+            key = "#instructorId"
+    )
     public void deleteInstructor(
             UUID instructorId
     ) {

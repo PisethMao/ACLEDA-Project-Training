@@ -58,6 +58,7 @@ public class ApiLoggingFilter extends OncePerRequestFilter {
                             responseWrapper,
                             request.getRequestURI()
                     );
+            log.info("TEST LOG LINE");
             log.info(
                     "API REQUEST | Method: {} | URI: {} | Query: {} | Body: {}",
                     request.getMethod(),

@@ -6,6 +6,9 @@ import com.acleda.training.studentmanagement.features.student.dto.StudentRequest
 import com.acleda.training.studentmanagement.features.student.dto.StudentResponse;
 import com.acleda.training.studentmanagement.features.student.dto.StudentUpdateResult;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -39,6 +42,10 @@ public class StudentServiceImpl implements StudentService {
 
     @Override
     @Transactional
+    @CachePut(
+            value = "students",
+            key = "#result.id()"
+    )
     public StudentResponse createStudent(StudentRequest request) {
         validateDuplicateForCreate(request);
         Student student = studentMapper.toEntity(request);
@@ -65,6 +72,10 @@ public class StudentServiceImpl implements StudentService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(
+            value = "students",
+            key = "#studentId"
+    )
     public StudentResponse getStudentById(UUID studentId) {
         Student student = findStudent(studentId);
         return studentMapper.toResponse(student);
@@ -94,6 +105,10 @@ public class StudentServiceImpl implements StudentService {
 
     @Override
     @Transactional
+    @CachePut(
+            value = "students",
+            key = "#studentId"
+    )
     public StudentUpdateResult updateStudent(
             UUID studentId,
             StudentRequest request
@@ -156,6 +171,10 @@ public class StudentServiceImpl implements StudentService {
 
     @Override
     @Transactional
+    @CacheEvict(
+            value = "students",
+            key = "#studentId"
+    )
     public void deleteStudent(UUID studentId) {
         Student student = findStudent(studentId);
         student.setDeleted(true);

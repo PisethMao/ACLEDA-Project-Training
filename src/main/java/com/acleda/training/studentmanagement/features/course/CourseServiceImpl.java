@@ -8,6 +8,9 @@ import com.acleda.training.studentmanagement.features.course.dto.UpdateCourseReq
 import com.acleda.training.studentmanagement.features.department.Department;
 import com.acleda.training.studentmanagement.features.department.DepartmentRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -25,6 +28,10 @@ public class CourseServiceImpl
 
     @Override
     @Transactional
+    @CachePut(
+            value = "courses",
+            key = "#result.id()"
+    )
     public CourseResponse createCourse(
             CreateCourseRequest request
     ) {
@@ -73,6 +80,10 @@ public class CourseServiceImpl
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(
+            value = "courses",
+            key = "#courseId"
+    )
     public CourseResponse getCourseById(
             UUID courseId
     ) {
@@ -85,6 +96,10 @@ public class CourseServiceImpl
 
     @Override
     @Transactional
+    @CachePut(
+            value = "courses",
+            key = "#courseId"
+    )
     public CourseResponse updateCourse(
             UUID courseId,
             UpdateCourseRequest request
@@ -123,6 +138,10 @@ public class CourseServiceImpl
 
     @Override
     @Transactional
+    @CacheEvict(
+            value = "courses",
+            key = "#courseId"
+    )
     public void deleteCourse(
             UUID courseId
     ) {

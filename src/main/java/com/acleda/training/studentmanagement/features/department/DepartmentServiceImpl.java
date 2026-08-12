@@ -8,6 +8,9 @@ import com.acleda.training.studentmanagement.features.department.dto.DepartmentR
 import com.acleda.training.studentmanagement.features.department.dto.DepartmentUpdateResult;
 import com.acleda.training.studentmanagement.features.department.dto.UpdateDepartmentRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -57,6 +60,10 @@ public class DepartmentServiceImpl implements DepartmentService {
         }
     }
 
+    @CachePut(
+            value = "departments",
+            key = "#result.id()"
+    )
     @Override
     public DepartmentResponse createDepartment(
             CreateDepartmentRequest request
@@ -117,6 +124,10 @@ public class DepartmentServiceImpl implements DepartmentService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(
+            value = "departments",
+            key = "#departmentId"
+    )
     public DepartmentResponse getDepartmentById(
             UUID departmentId
     ) {
@@ -152,6 +163,10 @@ public class DepartmentServiceImpl implements DepartmentService {
 
     @Override
     @Transactional
+    @CachePut(
+            value = "departments",
+            key = "#departmentId"
+    )
     public DepartmentUpdateResult updateDepartment(
             UUID departmentId,
             UpdateDepartmentRequest request
@@ -192,6 +207,10 @@ public class DepartmentServiceImpl implements DepartmentService {
         );
     }
 
+    @CacheEvict(
+            value = "departments",
+            key = "#enabled"
+    )
     @Override
     public DepartmentResponse updateDepartmentStatus(
             UUID departmentId,
@@ -217,6 +236,10 @@ public class DepartmentServiceImpl implements DepartmentService {
     }
 
     @Override
+    @CacheEvict(
+            value = "departments",
+            key = "#departmentId"
+    )
     public void deleteDepartment(
             UUID departmentId
     ) {
