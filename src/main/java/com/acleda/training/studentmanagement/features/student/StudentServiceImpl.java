@@ -23,19 +23,44 @@ public class StudentServiceImpl implements StudentService {
     private final StudentRepository studentRepository;
     private final StudentMapper studentMapper;
 
-    private void validateDuplicateForCreate(StudentRequest request) {
+    // Map the same field
+//    private void validateDuplicateForCreate(StudentRequest request) {
+//        if (studentRepository.existsByStudentCodeIgnoreCase(
+//                request.studentCode()
+//        )) {
+//            throw new ConflictException(
+//                    "Student code '" + request.studentCode() + "' already exists"
+//            );
+//        }
+//        if (studentRepository.existsByEmailIgnoreCase(
+//                request.email()
+//        )) {
+//            throw new ConflictException(
+//                    "Email '" + request.email() + "' already exists"
+//            );
+//        }
+//    }
+
+    // Map difference field follow request dto field
+    private void validateDuplicateForCreate(
+            StudentRequest request
+    ) {
         if (studentRepository.existsByStudentCodeIgnoreCase(
-                request.studentCode()
+                request.code().trim()
         )) {
             throw new ConflictException(
-                    "Student code '" + request.studentCode() + "' already exists"
+                    "Student code '"
+                            + request.code()
+                            + "' already exists"
             );
         }
         if (studentRepository.existsByEmailIgnoreCase(
-                request.email()
+                request.emailAddress().trim()
         )) {
             throw new ConflictException(
-                    "Email '" + request.email() + "' already exists"
+                    "Email '"
+                            + request.emailAddress()
+                            + "' already exists"
             );
         }
     }
@@ -81,24 +106,54 @@ public class StudentServiceImpl implements StudentService {
         return studentMapper.toResponse(student);
     }
 
+    // Map the same field
+//    private void validateDuplicateForUpdate(
+//            UUID studentId,
+//            StudentRequest request
+//    ) {
+//        if (studentRepository.existsByStudentCodeIgnoreCaseAndIdNot(
+//                request.studentCode(),
+//                studentId
+//        )) {
+//            throw new ConflictException(
+//                    "Student code '" + request.studentCode() + "' already exists"
+//            );
+//        }
+//        if (studentRepository.existsByEmailIgnoreCaseAndIdNot(
+//                request.email(),
+//                studentId
+//        )) {
+//            throw new ConflictException(
+//                    "Email '" + request.email() + "' already exists"
+//            );
+//        }
+//    }
+
+    // Map difference field follow request dto field
     private void validateDuplicateForUpdate(
             UUID studentId,
             StudentRequest request
     ) {
-        if (studentRepository.existsByStudentCodeIgnoreCaseAndIdNot(
-                request.studentCode(),
-                studentId
-        )) {
+        if (studentRepository
+                .existsByStudentCodeIgnoreCaseAndIdNot(
+                        request.code().trim(),
+                        studentId
+                )) {
             throw new ConflictException(
-                    "Student code '" + request.studentCode() + "' already exists"
+                    "Student code '"
+                            + request.code()
+                            + "' already exists"
             );
         }
-        if (studentRepository.existsByEmailIgnoreCaseAndIdNot(
-                request.email(),
-                studentId
-        )) {
+        if (studentRepository
+                .existsByEmailIgnoreCaseAndIdNot(
+                        request.emailAddress().trim(),
+                        studentId
+                )) {
             throw new ConflictException(
-                    "Email '" + request.email() + "' already exists"
+                    "Email '"
+                            + request.emailAddress()
+                            + "' already exists"
             );
         }
     }
@@ -114,38 +169,78 @@ public class StudentServiceImpl implements StudentService {
             StudentRequest request
     ) {
         Student student = findStudent(studentId);
+        // Map the same field
+//        boolean noChanges =
+//                Objects.equals(
+//                        student.getStudentCode(),
+//                        request.studentCode()
+//                )
+//                        && Objects.equals(
+//                        student.getFirstName(),
+//                        request.firstName()
+//                )
+//                        && Objects.equals(
+//                        student.getLastName(),
+//                        request.lastName()
+//                )
+//                        && Objects.equals(
+//                        student.getGender(),
+//                        request.gender()
+//                )
+//                        && Objects.equals(
+//                        student.getDateOfBirth(),
+//                        request.dateOfBirth()
+//                )
+//                        && Objects.equals(
+//                        student.getEmail(),
+//                        request.email()
+//                )
+//                        && Objects.equals(
+//                        student.getPhoneNumber(),
+//                        request.phoneNumber()
+//                )
+//                        && Objects.equals(
+//                        student.getAddress(),
+//                        request.address()
+//                );
+
+        // Map difference field follow request dto field
         boolean noChanges =
                 Objects.equals(
                         student.getStudentCode(),
-                        request.studentCode()
+                        request.code()
                 )
                         && Objects.equals(
                         student.getFirstName(),
-                        request.firstName()
+                        request.givenName()
                 )
                         && Objects.equals(
                         student.getLastName(),
-                        request.lastName()
+                        request.familyName()
                 )
                         && Objects.equals(
                         student.getGender(),
-                        request.gender()
+                        request.sex()
                 )
                         && Objects.equals(
                         student.getDateOfBirth(),
-                        request.dateOfBirth()
+                        request.birthDate()
                 )
                         && Objects.equals(
                         student.getEmail(),
-                        request.email()
+                        request.emailAddress()
                 )
                         && Objects.equals(
                         student.getPhoneNumber(),
-                        request.phoneNumber()
+                        request.phone()
                 )
                         && Objects.equals(
                         student.getAddress(),
-                        request.address()
+                        request.homeAddress()
+                )
+                        && Objects.equals(
+                        student.getEnrolledAt(),
+                        request.enrollmentDate()
                 );
         if (noChanges) {
             return new StudentUpdateResult(

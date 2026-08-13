@@ -298,8 +298,12 @@ public class GlobalExceptionHandler {
             HttpServletRequest request
     ) {
         log.error(
-                "Third-party API error: {}",
-                exception.getMessage()
+                "THIRD-PARTY API ERROR | Method: {} | URI: {} | Exception: {} | Message: {}",
+                request.getMethod(),
+                request.getRequestURI(),
+                exception.getClass().getSimpleName(),
+                exception.getMessage(),
+                exception
         );
         return ResponseUtil.fail(
                 HttpStatus.BAD_GATEWAY,
@@ -314,7 +318,6 @@ public class GlobalExceptionHandler {
             InvalidDataAccessResourceUsageException exception,
             HttpServletRequest request
     ) {
-        exception.getMostSpecificCause();
         String technicalMessage =
                 exception.getMostSpecificCause().getMessage();
         log.error(

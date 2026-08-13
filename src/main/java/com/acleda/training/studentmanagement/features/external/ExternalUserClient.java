@@ -1,64 +1,69 @@
 package com.acleda.training.studentmanagement.features.external;
 
-import com.acleda.training.studentmanagement.exception.ThirdPartyApiException;
 import com.acleda.training.studentmanagement.features.external.dto.ExternalUserResponse;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatusCode;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
-@Slf4j
+import java.util.List;
+
 @Component
 @RequiredArgsConstructor
 public class ExternalUserClient {
     private final WebClient jsonPlaceholderWebClient;
+    private final ExternalPageMapper externalPageMapper;
 
-    public ExternalUserResponse getUser(Long userId) {
-        log.info(
-                "[THIRD-PARTY CALL] Fetching external user id={}",
-                userId
-        );
+    public Page<ExternalUserResponse> getUsers(
+            Pageable pageable
+    ) {
+        ResponseEntity<List<ExternalUserResponse>> response =
+                jsonPlaceholderWebClient
+                        .get()
+                        .uri(
+                                uriBuilder -> uriBuilder
+                                        .path("/users")
+                                        .queryParam(
+                                                "_start",
+                                                pageable.getOffset()
+                                        )
+                                        .queryParam(
+                                                "_limit",
+                                                pageable.getPageSize()
+                                        )
+                                        .build()
+                        )
+                        .retrieve()
+                        .toEntity(
+                                new ParameterizedTypeReference<
+                                        List<ExternalUserResponse>
+                                        >() {
+                                }
+                        )
+                        .block();
+        assert response != null;
+        return externalPageMapper
+                .toPage(
+                        response,
+                        pageable
+                );
+    }
+
+    public ExternalUserResponse getUser(
+            Long userId
+    ) {
         return jsonPlaceholderWebClient
                 .get()
                 .uri(
-                        uriBuilder -> uriBuilder
-                                .path("/users/{id}")
-                                .build(userId)
+                        "/users/{userId}",
+                        userId
                 )
                 .retrieve()
-                .onStatus(
-                        HttpStatusCode::isError,
-                        response -> response
-                                .bodyToMono(String.class)
-                                .defaultIfEmpty("")
-                                .flatMap(body -> {
-                                    log.error(
-                                            "[THIRD-PARTY ERROR RESPONSE] status={} body={}",
-                                            response.statusCode().value(),
-                                            body
-                                    );
-                                    return reactor.core.publisher.Mono.error(
-                                            new ThirdPartyApiException(
-                                                    "Third-party API returned status "
-                                                            + response.statusCode().value()
-                                            )
-                                    );
-                                })
-                )
-                .bodyToMono(ExternalUserResponse.class)
-                .doOnNext(response ->
-                        log.info(
-                                "[THIRD-PARTY RESPONSE BODY] {}",
-                                response
-                        )
-                )
-                .doOnError(exception ->
-                        log.error(
-                                "[THIRD-PARTY CALL FAILED] userId={} message={}",
-                                userId,
-                                exception.getMessage()
-                        )
+                .bodyToMono(
+                        ExternalUserResponse.class
                 )
                 .block();
     }

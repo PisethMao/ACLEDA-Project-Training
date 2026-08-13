@@ -5,30 +5,60 @@ import jakarta.validation.constraints.*;
 
 import java.time.LocalDate;
 
+        // The same field
+//public record StudentRequest(
+//        @NotBlank(message = "Student code is required")
+//        @Size(max = 30, message = "Student code must not exceed 30 characters")
+//        String studentCode,
+//        @NotBlank(message = "First name is required")
+//        @Size(max = 100)
+//        String firstName,
+//        @NotBlank(message = "Last name is required")
+//        @Size(max = 100)
+//        String lastName,
+//        @NotNull(message = "Gender is required")
+//        Gender gender,
+//        @NotNull(message = "Date of birth is required")
+//        @Past(message = "Date of birth must be in the past")
+//        LocalDate dateOfBirth,
+//        @NotBlank(message = "Email is required")
+//        @Email(message = "Email format is invalid")
+//        @Size(max = 150)
+//        String email,
+//        @Size(max = 30)
+//        String phoneNumber,
+//        @Size(max = 500)
+//        String address,
+//        @NotNull(message = "Enrollment date is required")
+//        LocalDate enrolledAt
+//) {
+//}
+
+        // Difference Field
 public record StudentRequest(
         @NotBlank(message = "Student code is required")
-        @Size(max = 30, message = "Student code must not exceed 30 characters")
-        String studentCode,
-        @NotBlank(message = "First name is required")
+        @Size(max = 30)
+        String code,
+        @NotBlank(message = "Given name is required")
         @Size(max = 100)
-        String firstName,
-        @NotBlank(message = "Last name is required")
+        String givenName,
+        @NotBlank(message = "Family name is required")
         @Size(max = 100)
-        String lastName,
+        String familyName,
         @NotNull(message = "Gender is required")
-        Gender gender,
-        @NotNull(message = "Date of birth is required")
-        @Past(message = "Date of birth must be in the past")
-        LocalDate dateOfBirth,
+        Gender sex,
+        @NotNull(message = "Birth date is required")
+        @Past(message = "Birth date must be in the past")
+        LocalDate birthDate,
         @NotBlank(message = "Email is required")
         @Email(message = "Email format is invalid")
         @Size(max = 150)
-        String email,
+        String emailAddress,
         @Size(max = 30)
-        String phoneNumber,
+        String phone,
         @Size(max = 500)
-        String address,
+        String homeAddress,
         @NotNull(message = "Enrollment date is required")
-        LocalDate enrolledAt
+        LocalDate enrollmentDate
 ) {
 }

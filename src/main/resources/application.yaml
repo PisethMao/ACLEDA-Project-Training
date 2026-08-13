@@ -34,6 +34,9 @@ logging:
   level:
     root: INFO
     com.acleda.training.studentmanagement: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%X{requestId:-NO-REQUEST}] [%thread] %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%X{requestId:-NO-REQUEST}] [%thread] %logger{36} - %msg%n"
   logback:
     rollingpolicy:
       file-name-pattern: logs/archive/student-management-api-%d{yyyy-MM-dd}.%i.log
@@ -42,7 +45,9 @@ logging:
       total-size-cap: 1GB
 third-party:
   json-placeholder:
-    base-url: https://jsonplaceholder.typicode.com
+    base-url: ${JSON_PLACEHOLDER_BASE_URL:https://jsonplaceholder.typicode.com}
+    connect-timeout: 3s
+    response-timeout: 5s
 springdoc:
   api-docs:
     enabled: true
