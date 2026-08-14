@@ -30,7 +30,7 @@ public class InstructorServiceImpl
     @Override
     @Transactional
     @CachePut(
-            value = "instructors",
+            cacheNames = InstructorCacheNames.BY_ID,
             key = "#result.id()"
     )
     public InstructorResponse createInstructor(
@@ -127,8 +127,9 @@ public class InstructorServiceImpl
     @Override
     @Transactional(readOnly = true)
     @Cacheable(
-            value = "instructors",
-            key = "#instructorId"
+            cacheNames = InstructorCacheNames.BY_ID,
+            key = "#instructorId",
+            sync = true
     )
     public InstructorResponse getInstructorById(
             UUID instructorId
@@ -146,7 +147,7 @@ public class InstructorServiceImpl
     @Override
     @Transactional
     @CachePut(
-            value = "instructors",
+            cacheNames = InstructorCacheNames.BY_ID,
             key = "#instructorId"
     )
     public InstructorResponse updateInstructor(
@@ -222,7 +223,7 @@ public class InstructorServiceImpl
     @Override
     @Transactional
     @CacheEvict(
-            value = "instructors",
+            cacheNames = InstructorCacheNames.BY_ID,
             key = "#instructorId"
     )
     public void deleteInstructor(

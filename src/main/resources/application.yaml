@@ -15,10 +15,27 @@ spring:
         format_sql: true
   data:
     redis:
-      host: localhost
-      port: 6379
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
   cache:
     type: redis
+    cache-names:
+      - student-by-id
+      - department-by-id
+      - course-by-id
+      - instructor-by-id
+      - course-offering-by-id
+      - external-user-by-id
+      - external-users-page
+app:
+  cache:
+    student-ttl: 10m
+    department-ttl: 30m
+    course-ttl: 20m
+    instructor-ttl: 15m
+    course-offering-ttl: 5m
+    external-user-ttl: 5m
+    external-users-page-ttl: 2m
 server:
   port: 8080
 security:

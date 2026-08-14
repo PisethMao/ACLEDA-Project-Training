@@ -68,7 +68,7 @@ public class StudentServiceImpl implements StudentService {
     @Override
     @Transactional
     @CachePut(
-            value = "students",
+            cacheNames = StudentCacheNames.BY_ID,
             key = "#result.id()"
     )
     public StudentResponse createStudent(StudentRequest request) {
@@ -98,7 +98,7 @@ public class StudentServiceImpl implements StudentService {
     @Override
     @Transactional(readOnly = true)
     @Cacheable(
-            value = "students",
+            cacheNames = StudentCacheNames.BY_ID,
             key = "#studentId"
     )
     public StudentResponse getStudentById(UUID studentId) {
@@ -161,7 +161,7 @@ public class StudentServiceImpl implements StudentService {
     @Override
     @Transactional
     @CachePut(
-            value = "students",
+            cacheNames = StudentCacheNames.BY_ID,
             key = "#studentId"
     )
     public StudentUpdateResult updateStudent(
@@ -267,7 +267,7 @@ public class StudentServiceImpl implements StudentService {
     @Override
     @Transactional
     @CacheEvict(
-            value = "students",
+            cacheNames = StudentCacheNames.BY_ID,
             key = "#studentId"
     )
     public void deleteStudent(UUID studentId) {

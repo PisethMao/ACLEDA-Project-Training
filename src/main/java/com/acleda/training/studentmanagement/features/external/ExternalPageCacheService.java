@@ -1,9 +1,6 @@
 package com.acleda.training.studentmanagement.features.external;
 
-import com.acleda.training.studentmanagement.features.external.dto.ExternalAlbumResponse;
-import com.acleda.training.studentmanagement.features.external.dto.ExternalCommentResponse;
-import com.acleda.training.studentmanagement.features.external.dto.ExternalPostResponse;
-import com.acleda.training.studentmanagement.features.external.dto.ExternalUserResponse;
+import com.acleda.training.studentmanagement.features.external.dto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Pageable;
@@ -18,43 +15,34 @@ public class ExternalPageCacheService {
     private final ExternalAlbumClient externalAlbumClient;
 
     @Cacheable(
-            value = "external-user-pages",
-            key = "'page:' + #pageable.pageNumber"
-                    + " + ':size:' + #pageable.pageSize"
-                    + " + ':sort:' + #pageable.sort",
+            cacheNames = ExternalCacheNames.USERS_PAGE,
+            key = "#pageable.pageNumber + ':' + #pageable.pageSize + ':' + #pageable.sort",
             sync = true
     )
     public ExternalCachedPage<ExternalUserResponse> getUsers(
             Pageable pageable
     ) {
         return ExternalCachedPage.from(
-                externalUserClient
-                        .getUsers(pageable)
+                externalUserClient.getUsers(pageable)
         );
     }
 
     @Cacheable(
-            value = "external-post-pages",
-            key = "'page:' + #pageable.pageNumber"
-                    + " + ':size:' + #pageable.pageSize"
-                    + " + ':sort:' + #pageable.sort",
+            cacheNames = ExternalCacheNames.POSTS_PAGE,
+            key = "#pageable.pageNumber + ':' + #pageable.pageSize + ':' + #pageable.sort",
             sync = true
     )
     public ExternalCachedPage<ExternalPostResponse> getPosts(
             Pageable pageable
     ) {
         return ExternalCachedPage.from(
-                externalPostClient
-                        .getPosts(pageable)
+                externalPostClient.getPosts(pageable)
         );
     }
 
     @Cacheable(
-            value = "external-user-post-pages",
-            key = "'user:' + #userId"
-                    + " + ':page:' + #pageable.pageNumber"
-                    + " + ':size:' + #pageable.pageSize"
-                    + " + ':sort:' + #pageable.sort",
+            cacheNames = ExternalCacheNames.POSTS_BY_USER,
+            key = "#userId + ':' + #pageable.pageNumber + ':' + #pageable.pageSize + ':' + #pageable.sort",
             sync = true
     )
     public ExternalCachedPage<ExternalPostResponse> getPostsByUser(
@@ -62,36 +50,29 @@ public class ExternalPageCacheService {
             Pageable pageable
     ) {
         return ExternalCachedPage.from(
-                externalPostClient
-                        .getPostsByUser(
-                                userId,
-                                pageable
-                        )
+                externalPostClient.getPostsByUser(
+                        userId,
+                        pageable
+                )
         );
     }
 
     @Cacheable(
-            value = "external-comment-pages",
-            key = "'page:' + #pageable.pageNumber"
-                    + " + ':size:' + #pageable.pageSize"
-                    + " + ':sort:' + #pageable.sort",
+            cacheNames = ExternalCacheNames.COMMENTS_PAGE,
+            key = "#pageable.pageNumber + ':' + #pageable.pageSize + ':' + #pageable.sort",
             sync = true
     )
     public ExternalCachedPage<ExternalCommentResponse> getComments(
             Pageable pageable
     ) {
         return ExternalCachedPage.from(
-                externalCommentClient
-                        .getComments(pageable)
+                externalCommentClient.getComments(pageable)
         );
     }
 
     @Cacheable(
-            value = "external-post-comment-pages",
-            key = "'post:' + #postId"
-                    + " + ':page:' + #pageable.pageNumber"
-                    + " + ':size:' + #pageable.pageSize"
-                    + " + ':sort:' + #pageable.sort",
+            cacheNames = ExternalCacheNames.COMMENTS_BY_POST,
+            key = "#postId + ':' + #pageable.pageNumber + ':' + #pageable.pageSize + ':' + #pageable.sort",
             sync = true
     )
     public ExternalCachedPage<ExternalCommentResponse> getCommentsByPost(
@@ -99,36 +80,29 @@ public class ExternalPageCacheService {
             Pageable pageable
     ) {
         return ExternalCachedPage.from(
-                externalCommentClient
-                        .getCommentsByPost(
-                                postId,
-                                pageable
-                        )
+                externalCommentClient.getCommentsByPost(
+                        postId,
+                        pageable
+                )
         );
     }
 
     @Cacheable(
-            value = "external-album-pages",
-            key = "'page:' + #pageable.pageNumber"
-                    + " + ':size:' + #pageable.pageSize"
-                    + " + ':sort:' + #pageable.sort",
+            cacheNames = ExternalCacheNames.ALBUMS_PAGE,
+            key = "#pageable.pageNumber + ':' + #pageable.pageSize + ':' + #pageable.sort",
             sync = true
     )
     public ExternalCachedPage<ExternalAlbumResponse> getAlbums(
             Pageable pageable
     ) {
         return ExternalCachedPage.from(
-                externalAlbumClient
-                        .getAlbums(pageable)
+                externalAlbumClient.getAlbums(pageable)
         );
     }
 
     @Cacheable(
-            value = "external-user-album-pages",
-            key = "'user:' + #userId"
-                    + " + ':page:' + #pageable.pageNumber"
-                    + " + ':size:' + #pageable.pageSize"
-                    + " + ':sort:' + #pageable.sort",
+            cacheNames = ExternalCacheNames.ALBUMS_BY_USER,
+            key = "#userId + ':' + #pageable.pageNumber + ':' + #pageable.pageSize + ':' + #pageable.sort",
             sync = true
     )
     public ExternalCachedPage<ExternalAlbumResponse> getAlbumsByUser(
@@ -136,11 +110,10 @@ public class ExternalPageCacheService {
             Pageable pageable
     ) {
         return ExternalCachedPage.from(
-                externalAlbumClient
-                        .getAlbumsByUser(
-                                userId,
-                                pageable
-                        )
+                externalAlbumClient.getAlbumsByUser(
+                        userId,
+                        pageable
+                )
         );
     }
 }

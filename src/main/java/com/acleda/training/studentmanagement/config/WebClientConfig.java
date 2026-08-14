@@ -15,6 +15,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import reactor.netty.http.client.HttpClient;
 
+import java.util.concurrent.TimeUnit;
+
 @Slf4j
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(
@@ -59,40 +61,59 @@ public class WebClientConfig {
                         errorHandler::handle
                 )
                 .filter(
-                        logRequest()
-                )
-                .filter(
-                        logResponse()
+                        logThirdPartyExchange()
                 )
                 .build();
     }
 
-    private ExchangeFilterFunction logRequest() {
-        return ExchangeFilterFunction
-                .ofRequestProcessor(
-                        request -> {
-                            log.info(
-                                    "[THIRD-PARTY REQUEST] method={} url={}",
-                                    request.method(),
-                                    request.url()
+    private ExchangeFilterFunction logThirdPartyExchange() {
+        return (request, next) ->
+                Mono.defer(() -> {
+                    long startTime =
+                            System.nanoTime();
+                    log.info(
+                            "THIRD-PARTY REQUEST | Method: {} | URL: {}",
+                            request.method(),
+                            request.url()
+                    );
+                    return next
+                            .exchange(request)
+                            .doOnNext(
+                                    response -> {
+                                        long durationMs =
+                                                TimeUnit.NANOSECONDS
+                                                        .toMillis(
+                                                                System.nanoTime()
+                                                                        - startTime
+                                                        );
+                                        log.info(
+                                                "THIRD-PARTY RESPONSE | Method: {} | URL: {} | Status: {} | Duration: {}ms",
+                                                request.method(),
+                                                request.url(),
+                                                response
+                                                        .statusCode()
+                                                        .value(),
+                                                durationMs
+                                        );
+                                    }
+                            )
+                            .doOnError(
+                                    exception -> {
+                                        long durationMs =
+                                                TimeUnit.NANOSECONDS
+                                                        .toMillis(
+                                                                System.nanoTime()
+                                                                        - startTime
+                                                        );
+                                        log.error(
+                                                "THIRD-PARTY ERROR | Method: {} | URL: {} | Duration: {}ms | Error: {}",
+                                                request.method(),
+                                                request.url(),
+                                                durationMs,
+                                                exception.getMessage()
+                                        );
+                                    }
                             );
-                            return Mono.just(request);
-                        }
-                );
-    }
-
-    private ExchangeFilterFunction logResponse() {
-        return ExchangeFilterFunction
-                .ofResponseProcessor(
-                        response -> {
-                            log.info(
-                                    "[THIRD-PARTY RESPONSE] status={}",
-                                    response
-                                            .statusCode()
-                                            .value()
-                            );
-                            return Mono.just(response);
-                        }
-                );
+                });
     }
 }

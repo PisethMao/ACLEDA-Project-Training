@@ -63,7 +63,6 @@ public class AuthService {
         // Use By Mapper
         AppUser user =
                 appUserMapper.toEntity(request);
-        user.setUsername(username);
         user.setPassword(
                 passwordEncoder.encode(
                         request.password()

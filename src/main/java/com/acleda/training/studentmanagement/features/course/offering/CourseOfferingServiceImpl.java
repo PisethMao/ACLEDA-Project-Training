@@ -31,7 +31,7 @@ public class CourseOfferingServiceImpl implements CourseOfferingService {
     @Override
     @Transactional
     @CachePut(
-            value = "offerings",
+            cacheNames = CourseOfferingCacheNames.BY_ID,
             key = "#result.id()"
     )
     public CourseOfferingResponse createCourseOffering(
@@ -81,7 +81,7 @@ public class CourseOfferingServiceImpl implements CourseOfferingService {
     @Override
     @Transactional(readOnly = true)
     @Cacheable(
-            value = "offerings",
+            cacheNames = CourseOfferingCacheNames.BY_ID,
             key = "#courseOfferingId"
     )
     public CourseOfferingResponse getCourseOfferingById(
@@ -118,7 +118,7 @@ public class CourseOfferingServiceImpl implements CourseOfferingService {
 
     @Transactional
     @CachePut(
-            value = "offerings",
+            cacheNames = CourseOfferingCacheNames.BY_ID,
             key = "#courseOfferingId"
     )
     public CourseOfferingResponse updateCourseOffering(
@@ -173,7 +173,7 @@ public class CourseOfferingServiceImpl implements CourseOfferingService {
 
     @Transactional
     @CacheEvict(
-            value = "offerings",
+            cacheNames = CourseOfferingCacheNames.BY_ID,
             key = "#courseOfferingId"
     )
     public void deleteCourseOffering(

@@ -2,9 +2,7 @@ package com.acleda.training.studentmanagement.features.external;
 
 import com.acleda.training.studentmanagement.features.external.dto.*;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -31,15 +29,14 @@ public class ExternalDataServiceImpl
 
     @Override
     @Cacheable(
-            value = "external-users",
+            cacheNames = ExternalCacheNames.USER_BY_ID,
             key = "#userId",
             sync = true
     )
     public ExternalUserResponse getUser(
             Long userId
     ) {
-        return externalUserClient
-                .getUser(userId);
+        return externalUserClient.getUser(userId);
     }
 
     @Override
@@ -53,15 +50,14 @@ public class ExternalDataServiceImpl
 
     @Override
     @Cacheable(
-            value = "external-posts",
+            cacheNames = ExternalCacheNames.POST_BY_ID,
             key = "#postId",
             sync = true
     )
     public ExternalPostResponse getPost(
             Long postId
     ) {
-        return externalPostClient
-                .getPost(postId);
+        return externalPostClient.getPost(postId);
     }
 
     @Override
@@ -88,15 +84,14 @@ public class ExternalDataServiceImpl
 
     @Override
     @Cacheable(
-            value = "external-comments",
+            cacheNames = ExternalCacheNames.COMMENT_BY_ID,
             key = "#commentId",
             sync = true
     )
     public ExternalCommentResponse getComment(
             Long commentId
     ) {
-        return externalCommentClient
-                .getComment(commentId);
+        return externalCommentClient.getComment(commentId);
     }
 
     @Override
@@ -123,15 +118,14 @@ public class ExternalDataServiceImpl
 
     @Override
     @Cacheable(
-            value = "external-albums",
+            cacheNames = ExternalCacheNames.ALBUM_BY_ID,
             key = "#albumId",
             sync = true
     )
     public ExternalAlbumResponse getAlbum(
             Long albumId
     ) {
-        return externalAlbumClient
-                .getAlbum(albumId);
+        return externalAlbumClient.getAlbum(albumId);
     }
 
     @Override

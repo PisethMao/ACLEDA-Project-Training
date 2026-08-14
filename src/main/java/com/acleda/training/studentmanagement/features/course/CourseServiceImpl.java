@@ -29,7 +29,7 @@ public class CourseServiceImpl
     @Override
     @Transactional
     @CachePut(
-            value = "courses",
+            cacheNames = CourseCacheNames.BY_ID,
             key = "#result.id()"
     )
     public CourseResponse createCourse(
@@ -81,7 +81,7 @@ public class CourseServiceImpl
     @Override
     @Transactional(readOnly = true)
     @Cacheable(
-            value = "courses",
+            cacheNames = CourseCacheNames.BY_ID,
             key = "#courseId"
     )
     public CourseResponse getCourseById(
@@ -97,7 +97,7 @@ public class CourseServiceImpl
     @Override
     @Transactional
     @CachePut(
-            value = "courses",
+            cacheNames = CourseCacheNames.BY_ID,
             key = "#courseId"
     )
     public CourseResponse updateCourse(
@@ -139,7 +139,7 @@ public class CourseServiceImpl
     @Override
     @Transactional
     @CacheEvict(
-            value = "courses",
+            cacheNames = CourseCacheNames.BY_ID,
             key = "#courseId"
     )
     public void deleteCourse(

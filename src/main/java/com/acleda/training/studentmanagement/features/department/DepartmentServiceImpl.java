@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -61,7 +62,7 @@ public class DepartmentServiceImpl implements DepartmentService {
     }
 
     @CachePut(
-            value = "departments",
+            cacheNames = DepartmentCacheNames.BY_ID,
             key = "#result.id()"
     )
     @Override
@@ -125,7 +126,7 @@ public class DepartmentServiceImpl implements DepartmentService {
     @Override
     @Transactional(readOnly = true)
     @Cacheable(
-            value = "departments",
+            cacheNames = DepartmentCacheNames.BY_ID,
             key = "#departmentId"
     )
     public DepartmentResponse getDepartmentById(
@@ -163,9 +164,17 @@ public class DepartmentServiceImpl implements DepartmentService {
 
     @Override
     @Transactional
-    @CachePut(
-            value = "departments",
-            key = "#departmentId"
+    @Caching(
+            evict = {
+                    @CacheEvict(
+                            cacheNames = DepartmentCacheNames.BY_ID,
+                            key = "#departmentId"
+                    ),
+                    @CacheEvict(
+                            cacheNames = DepartmentCacheNames.LIST,
+                            allEntries = true
+                    )
+            }
     )
     public DepartmentUpdateResult updateDepartment(
             UUID departmentId,
@@ -207,7 +216,7 @@ public class DepartmentServiceImpl implements DepartmentService {
         );
     }
 
-    @CacheEvict(
+    @CachePut(
             value = "departments",
             key = "#enabled"
     )
@@ -237,7 +246,7 @@ public class DepartmentServiceImpl implements DepartmentService {
 
     @Override
     @CacheEvict(
-            value = "departments",
+            cacheNames = DepartmentCacheNames.BY_ID,
             key = "#departmentId"
     )
     public void deleteDepartment(

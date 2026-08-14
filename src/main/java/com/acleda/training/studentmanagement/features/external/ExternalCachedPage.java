@@ -8,8 +8,8 @@ import java.util.List;
 
 public record ExternalCachedPage<T>(
         List<T> content,
-        int page,
-        int size,
+        int pageNumber,
+        int pageSize,
         long totalElements
 ) {
     public static <T> ExternalCachedPage<T> from(
@@ -22,13 +22,12 @@ public record ExternalCachedPage<T>(
                 page.getTotalElements()
         );
     }
-
     public Page<T> toPage() {
         return new PageImpl<>(
                 content,
                 PageRequest.of(
-                        page,
-                        size
+                        pageNumber,
+                        pageSize
                 ),
                 totalElements
         );
