@@ -20,6 +20,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -59,8 +60,8 @@ public class EnrollmentController {
     @Operation(
             summary = "Get all enrollments",
             description = """
-                Search, filter, sort, and paginate enrollments
-                """
+                    Search, filter, sort, and paginate enrollments
+                    """
     )
     @GetMapping
     public ResponseEntity<ApiResponse<Page<EnrollmentResponse>>>
@@ -197,6 +198,32 @@ public class EnrollmentController {
         return ResponseUtil.success(
                 HttpStatus.OK,
                 "Enrollment deleted successfully",
+                null,
+                httpServletRequest.getRequestURI()
+        );
+    }
+
+    @Operation(
+            summary = "Test enrollment transaction",
+            description = """
+                Creates multiple enrollments in a single database transaction.
+                If any enrollment fails, the entire transaction is rolled back.
+                This endpoint is intended for testing transaction behavior.
+                """
+    )
+    @PostMapping("/transaction-test")
+    public ResponseEntity<ApiResponse<Object>>
+    testTransaction(
+            @Valid
+            @RequestBody
+            List<CreateEnrollmentRequest> requests,
+            HttpServletRequest httpServletRequest
+    ) {
+        enrollmentService
+                .testBulkEnrollmentTransaction(requests);
+        return ResponseUtil.success(
+                HttpStatus.CREATED,
+                "Enrollment transaction completed successfully",
                 null,
                 httpServletRequest.getRequestURI()
         );

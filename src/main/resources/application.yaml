@@ -8,7 +8,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
+    show-sql: false
     open-in-view: false
     properties:
       hibernate:
@@ -19,16 +19,17 @@ spring:
       port: ${REDIS_PORT:6379}
   cache:
     type: redis
-    cache-names:
-      - student-by-id
-      - department-by-id
-      - course-by-id
-      - instructor-by-id
-      - course-offering-by-id
-      - external-user-by-id
-      - external-users-page
+#    cache-names:
+#      - student-by-id
+#      - department-by-id
+#      - course-by-id
+#      - instructor-by-id
+#      - course-offering-by-id
+#      - external-user-by-id
+#      - external-users-page
 app:
   cache:
+    default-ttl: 10m
     student-ttl: 10m
     department-ttl: 30m
     course-ttl: 20m
@@ -51,6 +52,10 @@ logging:
   level:
     root: INFO
     com.acleda.training.studentmanagement: INFO
+    org.springframework.transaction: TRACE
+    org.springframework.orm.jpa.JpaTransactionManager: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.orm.jdbc.bind: TRACE
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%X{requestId:-NO-REQUEST}] [%thread] %logger{36} - %msg%n"
     file: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%X{requestId:-NO-REQUEST}] [%thread] %logger{36} - %msg%n"

@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -97,6 +98,9 @@ public class EnrollmentServiceImpl
                 enrollmentRepository.saveAndFlush(
                         enrollment
                 );
+//        throw new RuntimeException(
+//                "TEST TRANSACTION ROLLBACK"
+//        );
         return enrollmentMapper.toResponse(
                 savedEnrollment
         );
@@ -304,10 +308,18 @@ public class EnrollmentServiceImpl
                 findEnrollmentById(
                         enrollmentId
                 );
-
         enrollment.setDeleted(true);
         enrollmentRepository.save(
                 enrollment
         );
+    }
+
+    @Override
+    public void testBulkEnrollmentTransaction(
+            List<CreateEnrollmentRequest> requests
+    ) {
+        for (CreateEnrollmentRequest request : requests) {
+            createEnrollment(request);
+        }
     }
 }

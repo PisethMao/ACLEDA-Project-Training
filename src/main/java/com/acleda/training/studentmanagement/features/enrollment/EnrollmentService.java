@@ -7,6 +7,7 @@ import com.acleda.training.studentmanagement.features.enrollment.dto.UpdateEnrol
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.List;
 import java.util.UUID;
 
 public interface EnrollmentService {
@@ -40,5 +41,9 @@ public interface EnrollmentService {
 
     void deleteEnrollment(
             UUID enrollmentId
+    );
+
+    void testBulkEnrollmentTransaction(
+            List<CreateEnrollmentRequest> requests
     );
 }

@@ -16,16 +16,19 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.RedisSerializer;
 
-import java.time.Duration;
 import java.util.Map;
 
 @Configuration(proxyBeanMethods = false)
 @EnableCaching
 @EnableConfigurationProperties(CacheProperties.class)
 public class RedisCacheConfig {
+    private static final String CACHE_PREFIX =
+            "student-management:v1:";
+
     @Bean
     RedisCacheManager cacheManager(
-            RedisConnectionFactory connectionFactory
+            RedisConnectionFactory connectionFactory,
+            CacheProperties properties
     ) {
         var keySerializer =
                 RedisSerializationContext.SerializationPair
@@ -40,13 +43,13 @@ public class RedisCacheConfig {
         RedisCacheConfiguration defaultConfig =
                 RedisCacheConfiguration
                         .defaultCacheConfig()
-                        .entryTtl(Duration.ofMinutes(10))
+                        .entryTtl(properties.defaultTtl())
                         .disableCachingNullValues()
                         .serializeKeysWith(keySerializer)
                         .serializeValuesWith(valueSerializer)
                         .computePrefixWith(
                                 cacheName ->
-                                        "student-management:v1:"
+                                        CACHE_PREFIX
                                                 + cacheName
                                                 + "::"
                         );
@@ -54,39 +57,37 @@ public class RedisCacheConfig {
                 Map.of(
                         StudentCacheNames.BY_ID,
                         defaultConfig.entryTtl(
-                                Duration.ofMinutes(10)
+                                properties.studentTtl()
                         ),
                         DepartmentCacheNames.BY_ID,
                         defaultConfig.entryTtl(
-                                Duration.ofMinutes(30)
+                                properties.departmentTtl()
                         ),
                         CourseCacheNames.BY_ID,
                         defaultConfig.entryTtl(
-                                Duration.ofMinutes(20)
+                                properties.courseTtl()
                         ),
                         InstructorCacheNames.BY_ID,
                         defaultConfig.entryTtl(
-                                Duration.ofMinutes(15)
+                                properties.instructorTtl()
                         ),
                         CourseOfferingCacheNames.BY_ID,
                         defaultConfig.entryTtl(
-                                Duration.ofMinutes(5)
+                                properties.courseOfferingTtl()
                         ),
                         ExternalCacheNames.USER_BY_ID,
                         defaultConfig.entryTtl(
-                                Duration.ofMinutes(5)
+                                properties.externalUserTtl()
                         ),
                         ExternalCacheNames.USERS_PAGE,
                         defaultConfig.entryTtl(
-                                Duration.ofMinutes(2)
+                                properties.externalUsersPageTtl()
                         )
                 );
         return RedisCacheManager
                 .builder(connectionFactory)
                 .cacheDefaults(defaultConfig)
-                .withInitialCacheConfigurations(
-                        configurations
-                )
+                .withInitialCacheConfigurations(configurations)
                 .transactionAware()
                 .build();
     }
