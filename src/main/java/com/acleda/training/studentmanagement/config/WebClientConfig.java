@@ -23,6 +23,8 @@ import java.util.concurrent.TimeUnit;
         JsonPlaceholderProperties.class
 )
 public class WebClientConfig {
+    private static final int MAX_BODY_LENGTH = 5000;
+
     @Bean
     public WebClient jsonPlaceholderWebClient(
             WebClient.Builder builder,
@@ -69,8 +71,7 @@ public class WebClientConfig {
     private ExchangeFilterFunction logThirdPartyExchange() {
         return (request, next) ->
                 Mono.defer(() -> {
-                    long startTime =
-                            System.nanoTime();
+                    long startTime = System.nanoTime();
                     log.info(
                             "THIRD-PARTY REQUEST | Method: {} | URL: {}",
                             request.method(),
@@ -78,42 +79,66 @@ public class WebClientConfig {
                     );
                     return next
                             .exchange(request)
-                            .doOnNext(
-                                    response -> {
-                                        long durationMs =
-                                                TimeUnit.NANOSECONDS
-                                                        .toMillis(
-                                                                System.nanoTime()
-                                                                        - startTime
-                                                        );
-                                        log.info(
-                                                "THIRD-PARTY RESPONSE | Method: {} | URL: {} | Status: {} | Duration: {}ms",
-                                                request.method(),
-                                                request.url(),
-                                                response
-                                                        .statusCode()
-                                                        .value(),
-                                                durationMs
-                                        );
-                                    }
-                            )
-                            .doOnError(
-                                    exception -> {
-                                        long durationMs =
-                                                TimeUnit.NANOSECONDS
-                                                        .toMillis(
-                                                                System.nanoTime()
-                                                                        - startTime
-                                                        );
-                                        log.error(
-                                                "THIRD-PARTY ERROR | Method: {} | URL: {} | Duration: {}ms | Error: {}",
-                                                request.method(),
-                                                request.url(),
-                                                durationMs,
-                                                exception.getMessage()
-                                        );
-                                    }
-                            );
+                            .flatMap(response -> {
+                                long durationMs =
+                                        TimeUnit.NANOSECONDS
+                                                .toMillis(
+                                                        System.nanoTime()
+                                                                - startTime
+                                                );
+                                return response
+                                        .bodyToMono(String.class)
+                                        .defaultIfEmpty("")
+                                        .map(body -> {
+                                            log.info(
+                                                    "THIRD-PARTY RESPONSE | Method: {} | URL: {} | Status: {} | Duration: {}ms",
+                                                    request.method(),
+                                                    request.url(),
+                                                    response
+                                                            .statusCode()
+                                                            .value(),
+                                                    durationMs
+                                            );
+                                            log.info(
+                                                    "THIRD-PARTY RESPONSE BODY | Method: {} | URL: {} | Body: {}",
+                                                    request.method(),
+                                                    request.url(),
+                                                    truncate(body)
+                                            );
+                                            return response
+                                                    .mutate()
+                                                    .body(body)
+                                                    .build();
+                                        });
+                            })
+                            .doOnError(exception -> {
+                                long durationMs =
+                                        TimeUnit.NANOSECONDS
+                                                .toMillis(
+                                                        System.nanoTime()
+                                                                - startTime
+                                                );
+                                log.error(
+                                        "THIRD-PARTY ERROR | Method: {} | URL: {} | Duration: {}ms | Error: {}",
+                                        request.method(),
+                                        request.url(),
+                                        durationMs,
+                                        exception.getMessage()
+                                );
+                            });
                 });
+    }
+
+    private String truncate(String body) {
+        if (body == null) {
+            return null;
+        }
+        if (body.length() <= MAX_BODY_LENGTH) {
+            return body;
+        }
+        return body.substring(
+                0,
+                MAX_BODY_LENGTH
+        ) + "...[TRUNCATED]";
     }
 }
