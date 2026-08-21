@@ -26,7 +26,6 @@ public class ResponseLoggingAdvice
     ) {
         return true;
     }
-
     @Override
     public Object beforeBodyWrite(
             Object body,
@@ -36,12 +35,17 @@ public class ResponseLoggingAdvice
             @NonNull ServerHttpRequest request,
             @NonNull ServerHttpResponse response
     ) {
-        String path = request.getURI().getPath();
+        String path =
+                request
+                        .getURI()
+                        .getPath();
         try {
             String responseBody =
-                    objectMapper.writeValueAsString(body);
+                    objectMapper
+                            .writerWithDefaultPrettyPrinter()
+                            .writeValueAsString(body);
             log.info(
-                    "API RESPONSE BODY | Method: {} | URI: {} | Body: {}",
+                    "API RESPONSE BODY | Method: {} | URI: {} | Body:\n{}",
                     request.getMethod(),
                     path,
                     truncate(responseBody)
@@ -56,15 +60,18 @@ public class ResponseLoggingAdvice
         }
         return body;
     }
-
-    private String truncate(String body) {
+    private String truncate(
+            String body
+    ) {
         if (body == null) {
             return null;
         }
         if (body.length() <= MAX_BODY_LENGTH) {
             return body;
         }
-        return body.substring(0, MAX_BODY_LENGTH)
-                + "...[TRUNCATED]";
+        return body.substring(
+                0,
+                MAX_BODY_LENGTH
+        ) + "...[TRUNCATED]";
     }
 }

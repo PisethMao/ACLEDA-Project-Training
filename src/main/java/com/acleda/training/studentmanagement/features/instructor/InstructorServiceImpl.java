@@ -1,5 +1,6 @@
 package com.acleda.training.studentmanagement.features.instructor;
 
+import com.acleda.training.studentmanagement.config.CacheProperties;
 import com.acleda.training.studentmanagement.exception.ConflictException;
 import com.acleda.training.studentmanagement.exception.ResourceNotFoundException;
 import com.acleda.training.studentmanagement.features.department.Department;
@@ -8,17 +9,20 @@ import com.acleda.training.studentmanagement.features.instructor.dto.CreateInstr
 import com.acleda.training.studentmanagement.features.instructor.dto.InstructorResponse;
 import com.acleda.training.studentmanagement.features.instructor.dto.UpdateInstructorRequest;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.CachePut;
-import org.springframework.cache.annotation.Cacheable;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.Locale;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class InstructorServiceImpl
@@ -26,13 +30,12 @@ public class InstructorServiceImpl
     private final InstructorRepository instructorRepository;
     private final DepartmentRepository departmentRepository;
     private final InstructorMapper instructorMapper;
+    private final StringRedisTemplate redisTemplate;
+    private final ObjectMapper objectMapper;
+    private final CacheProperties cacheProperties;
 
     @Override
     @Transactional
-    @CachePut(
-            cacheNames = InstructorCacheNames.BY_ID,
-            key = "#result.id()"
-    )
     public InstructorResponse createInstructor(
             CreateInstructorRequest request
     ) {
@@ -113,12 +116,13 @@ public class InstructorServiceImpl
                         keyword
                 );
         Page<Instructor> instructors =
-                instructorRepository.findAllWithFilters(
-                        normalizedKeyword,
-                        departmentId,
-                        enabled,
-                        pageable
-                );
+                instructorRepository
+                        .findAllWithFilters(
+                                normalizedKeyword,
+                                departmentId,
+                                enabled,
+                                pageable
+                        );
         return instructors.map(
                 instructorMapper::toResponse
         );
@@ -126,30 +130,33 @@ public class InstructorServiceImpl
 
     @Override
     @Transactional(readOnly = true)
-    @Cacheable(
-            cacheNames = InstructorCacheNames.BY_ID,
-            key = "#instructorId",
-            sync = true
-    )
     public InstructorResponse getInstructorById(
             UUID instructorId
     ) {
+        InstructorResponse cachedInstructor =
+                getInstructorFromCache(
+                        instructorId
+                );
+        if (cachedInstructor != null) {
+            return cachedInstructor;
+        }
         Instructor instructor =
                 getInstructor(
                         instructorId
                 );
-        return instructorMapper.toResponse(
-                instructor
+        InstructorResponse response =
+                instructorMapper.toResponse(
+                        instructor
+                );
+        cacheInstructor(
+                instructorId,
+                response
         );
+        return response;
     }
-
 
     @Override
     @Transactional
-    @CachePut(
-            cacheNames = InstructorCacheNames.BY_ID,
-            key = "#instructorId"
-    )
     public InstructorResponse updateInstructor(
             UUID instructorId,
             UpdateInstructorRequest request
@@ -215,6 +222,9 @@ public class InstructorServiceImpl
                 instructorRepository.save(
                         instructor
                 );
+        evictInstructorCache(
+                instructorId
+        );
         return instructorMapper.toResponse(
                 updatedInstructor
         );
@@ -222,10 +232,6 @@ public class InstructorServiceImpl
 
     @Override
     @Transactional
-    @CacheEvict(
-            cacheNames = InstructorCacheNames.BY_ID,
-            key = "#instructorId"
-    )
     public void deleteInstructor(
             UUID instructorId
     ) {
@@ -242,6 +248,137 @@ public class InstructorServiceImpl
         instructorRepository.save(
                 instructor
         );
+        evictInstructorCache(
+                instructorId
+        );
+    }
+
+    private InstructorResponse getInstructorFromCache(
+            UUID instructorId
+    ) {
+        String key =
+                buildCacheKey(
+                        instructorId
+                );
+        try {
+            String json =
+                    redisTemplate
+                            .opsForValue()
+                            .get(key);
+            if (json == null) {
+                log.info(
+                        "Instructor cache MISS - key={}",
+                        key
+                );
+                return null;
+            }
+            InstructorResponse response =
+                    objectMapper.readValue(
+                            json,
+                            InstructorResponse.class
+                    );
+            log.info(
+                    "Instructor cache HIT - key={}",
+                    key
+            );
+            return response;
+        } catch (JacksonException e) {
+            log.warn(
+                    "Invalid Instructor cache value - key={}",
+                    key,
+                    e
+            );
+            evictInstructorCache(
+                    instructorId
+            );
+            return null;
+        } catch (DataAccessException e) {
+            log.warn(
+                    "Redis unavailable while reading Instructor - key={}",
+                    key,
+                    e
+            );
+            return null;
+        }
+    }
+
+    private void cacheInstructor(
+            UUID instructorId,
+            InstructorResponse response
+    ) {
+        String key =
+                buildCacheKey(
+                        instructorId
+                );
+        try {
+            String json =
+                    objectMapper.writeValueAsString(
+                            response
+                    );
+            redisTemplate
+                    .opsForValue()
+                    .set(
+                            key,
+                            json,
+                            cacheProperties
+                                    .instructor()
+                                    .ttl()
+                    );
+            log.info(
+                    "Instructor cache SET - key={}, ttl={}",
+                    key,
+                    cacheProperties
+                            .instructor()
+                            .ttl()
+            );
+        } catch (JacksonException e) {
+            log.warn(
+                    "Could not serialize Instructor for Redis - id={}",
+                    instructorId,
+                    e
+            );
+        } catch (DataAccessException e) {
+            log.warn(
+                    "Redis unavailable while caching Instructor - key={}",
+                    key,
+                    e
+            );
+        }
+    }
+
+    private void evictInstructorCache(
+            UUID instructorId
+    ) {
+        String key =
+                buildCacheKey(
+                        instructorId
+                );
+        try {
+            Boolean deleted =
+                    redisTemplate.delete(
+                            key
+                    );
+            log.info(
+                    "Instructor cache DELETE - key={}, deleted={}",
+                    key,
+                    deleted
+            );
+        } catch (DataAccessException e) {
+            log.warn(
+                    "Redis unavailable while deleting Instructor cache - key={}",
+                    key,
+                    e
+            );
+        }
+    }
+
+    private String buildCacheKey(
+            UUID instructorId
+    ) {
+        return cacheProperties
+                .instructor()
+                .keyPrefix()
+                + instructorId;
     }
 
     private Instructor getInstructor(

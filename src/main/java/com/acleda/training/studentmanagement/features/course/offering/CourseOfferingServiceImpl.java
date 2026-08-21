@@ -1,5 +1,6 @@
 package com.acleda.training.studentmanagement.features.course.offering;
 
+import com.acleda.training.studentmanagement.config.CacheProperties;
 import com.acleda.training.studentmanagement.exception.ConflictException;
 import com.acleda.training.studentmanagement.exception.ResourceNotFoundException;
 import com.acleda.training.studentmanagement.features.course.Course;
@@ -10,30 +11,34 @@ import com.acleda.training.studentmanagement.features.course.offering.dto.Update
 import com.acleda.training.studentmanagement.features.instructor.Instructor;
 import com.acleda.training.studentmanagement.features.instructor.InstructorRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.CachePut;
-import org.springframework.cache.annotation.Cacheable;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
-public class CourseOfferingServiceImpl implements CourseOfferingService {
+public class CourseOfferingServiceImpl
+        implements CourseOfferingService {
     private final CourseOfferingRepository courseOfferingRepository;
     private final CourseRepository courseRepository;
     private final InstructorRepository instructorRepository;
     private final CourseOfferingMapper courseOfferingMapper;
+    private final StringRedisTemplate redisTemplate;
+    private final ObjectMapper objectMapper;
+    private final CacheProperties cacheProperties;
 
     @Override
     @Transactional
-    @CachePut(
-            cacheNames = CourseOfferingCacheNames.BY_ID,
-            key = "#result.id()"
-    )
     public CourseOfferingResponse createCourseOffering(
             CreateCourseOfferingRequest request
     ) {
@@ -41,20 +46,28 @@ public class CourseOfferingServiceImpl implements CourseOfferingService {
                 request.startDate(),
                 request.endDate()
         );
-        Course course = courseRepository
-                .findByIdAndDeletedFalse(request.courseId())
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Course not found"
+        Course course =
+                courseRepository
+                        .findByIdAndDeletedFalse(
+                                request.courseId()
                         )
-                );
-        Instructor instructor = instructorRepository
-                .findByIdAndDeletedFalse(request.instructorId())
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Instructor not found"
+                        .orElseThrow(
+                                () ->
+                                        new ResourceNotFoundException(
+                                                "Course not found"
+                                        )
+                        );
+        Instructor instructor =
+                instructorRepository
+                        .findByIdAndDeletedFalse(
+                                request.instructorId()
                         )
-                );
+                        .orElseThrow(
+                                () ->
+                                        new ResourceNotFoundException(
+                                                "Instructor not found"
+                                        )
+                        );
         boolean exists =
                 courseOfferingRepository
                         .existsByCourse_IdAndAcademicYearIgnoreCaseAndSemesterIgnoreCaseAndSectionIgnoreCaseAndDeletedFalse(
@@ -74,24 +87,36 @@ public class CourseOfferingServiceImpl implements CourseOfferingService {
         courseOffering.setInstructor(instructor);
         normalize(courseOffering);
         CourseOffering saved =
-                courseOfferingRepository.saveAndFlush(courseOffering);
+                courseOfferingRepository
+                        .saveAndFlush(courseOffering);
         return courseOfferingMapper.toResponse(saved);
     }
 
     @Override
     @Transactional(readOnly = true)
-    @Cacheable(
-            cacheNames = CourseOfferingCacheNames.BY_ID,
-            key = "#courseOfferingId"
-    )
     public CourseOfferingResponse getCourseOfferingById(
             UUID courseOfferingId
     ) {
+        CourseOfferingResponse cachedOffering =
+                getCourseOfferingFromCache(
+                        courseOfferingId
+                );
+        if (cachedOffering != null) {
+            return cachedOffering;
+        }
         CourseOffering courseOffering =
-                findCourseOffering(courseOfferingId);
-        return courseOfferingMapper.toResponse(
-                courseOffering
+                findCourseOffering(
+                        courseOfferingId
+                );
+        CourseOfferingResponse response =
+                courseOfferingMapper.toResponse(
+                        courseOffering
+                );
+        cacheCourseOffering(
+                courseOfferingId,
+                response
         );
+        return response;
     }
 
     @Override
@@ -116,35 +141,42 @@ public class CourseOfferingServiceImpl implements CourseOfferingService {
                 .map(courseOfferingMapper::toResponse);
     }
 
+    @Override
     @Transactional
-    @CachePut(
-            cacheNames = CourseOfferingCacheNames.BY_ID,
-            key = "#courseOfferingId"
-    )
     public CourseOfferingResponse updateCourseOffering(
             UUID courseOfferingId,
             UpdateCourseOfferingRequest request
     ) {
         CourseOffering courseOffering =
-                findCourseOffering(courseOfferingId);
+                findCourseOffering(
+                        courseOfferingId
+                );
         validateDateRange(
                 request.startDate(),
                 request.endDate()
         );
-        Course course = courseRepository
-                .findByIdAndDeletedFalse(request.courseId())
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Course not found"
+        Course course =
+                courseRepository
+                        .findByIdAndDeletedFalse(
+                                request.courseId()
                         )
-                );
-        Instructor instructor = instructorRepository
-                .findByIdAndDeletedFalse(request.instructorId())
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Instructor not found"
+                        .orElseThrow(
+                                () ->
+                                        new ResourceNotFoundException(
+                                                "Course not found"
+                                        )
+                        );
+        Instructor instructor =
+                instructorRepository
+                        .findByIdAndDeletedFalse(
+                                request.instructorId()
                         )
-                );
+                        .orElseThrow(
+                                () ->
+                                        new ResourceNotFoundException(
+                                                "Instructor not found"
+                                        )
+                        );
         boolean exists =
                 courseOfferingRepository
                         .existsByCourse_IdAndAcademicYearIgnoreCaseAndSemesterIgnoreCaseAndSectionIgnoreCaseAndDeletedFalseAndIdNot(
@@ -167,24 +199,159 @@ public class CourseOfferingServiceImpl implements CourseOfferingService {
         courseOffering.setInstructor(instructor);
         normalize(courseOffering);
         CourseOffering saved =
-                courseOfferingRepository.save(courseOffering);
-        return courseOfferingMapper.toResponse(saved);
+                courseOfferingRepository.save(
+                        courseOffering
+                );
+        evictCourseOfferingCache(
+                courseOfferingId
+        );
+        return courseOfferingMapper.toResponse(
+                saved
+        );
     }
 
+    @Override
     @Transactional
-    @CacheEvict(
-            cacheNames = CourseOfferingCacheNames.BY_ID,
-            key = "#courseOfferingId"
-    )
     public void deleteCourseOffering(
             UUID courseOfferingId
     ) {
         CourseOffering courseOffering =
-                findCourseOffering(courseOfferingId);
+                findCourseOffering(
+                        courseOfferingId
+                );
         courseOffering.setDeleted(true);
         courseOfferingRepository.save(
                 courseOffering
         );
+        evictCourseOfferingCache(
+                courseOfferingId
+        );
+    }
+
+    private CourseOfferingResponse getCourseOfferingFromCache(
+            UUID courseOfferingId
+    ) {
+        String key =
+                buildCacheKey(
+                        courseOfferingId
+                );
+        try {
+            String json =
+                    redisTemplate
+                            .opsForValue()
+                            .get(key);
+            if (json == null) {
+                log.info(
+                        "CourseOffering cache MISS - key={}",
+                        key
+                );
+                return null;
+            }
+            CourseOfferingResponse response =
+                    objectMapper.readValue(
+                            json,
+                            CourseOfferingResponse.class
+                    );
+            log.info(
+                    "CourseOffering cache HIT - key={}",
+                    key
+            );
+            return response;
+        } catch (JacksonException e) {
+            log.warn(
+                    "Invalid CourseOffering cache value - key={}",
+                    key,
+                    e
+            );
+            evictCourseOfferingCache(
+                    courseOfferingId
+            );
+            return null;
+        } catch (DataAccessException e) {
+            log.warn(
+                    "Redis unavailable while reading CourseOffering - key={}",
+                    key,
+                    e
+            );
+            return null;
+        }
+    }
+
+    private void cacheCourseOffering(
+            UUID courseOfferingId,
+            CourseOfferingResponse response
+    ) {
+        String key =
+                buildCacheKey(
+                        courseOfferingId
+                );
+        try {
+            String json =
+                    objectMapper.writeValueAsString(
+                            response
+                    );
+            redisTemplate
+                    .opsForValue()
+                    .set(
+                            key,
+                            json,
+                            cacheProperties
+                                    .courseOffering()
+                                    .ttl()
+                    );
+            log.info(
+                    "CourseOffering cache SET - key={}, ttl={}",
+                    key,
+                    cacheProperties
+                            .courseOffering()
+                            .ttl()
+            );
+        } catch (JacksonException e) {
+            log.warn(
+                    "Could not serialize CourseOffering for Redis - id={}",
+                    courseOfferingId,
+                    e
+            );
+        } catch (DataAccessException e) {
+            log.warn(
+                    "Redis unavailable while caching CourseOffering - key={}",
+                    key,
+                    e
+            );
+        }
+    }
+
+    private void evictCourseOfferingCache(
+            UUID courseOfferingId
+    ) {
+        String key =
+                buildCacheKey(
+                        courseOfferingId
+                );
+        try {
+            Boolean deleted =
+                    redisTemplate.delete(key);
+            log.info(
+                    "CourseOffering cache DELETE - key={}, deleted={}",
+                    key,
+                    deleted
+            );
+        } catch (DataAccessException e) {
+            log.warn(
+                    "Redis unavailable while deleting CourseOffering cache - key={}",
+                    key,
+                    e
+            );
+        }
+    }
+
+    private String buildCacheKey(
+            UUID courseOfferingId
+    ) {
+        return cacheProperties
+                .courseOffering()
+                .keyPrefix()
+                + courseOfferingId;
     }
 
     private CourseOffering findCourseOffering(
@@ -192,16 +359,17 @@ public class CourseOfferingServiceImpl implements CourseOfferingService {
     ) {
         return courseOfferingRepository
                 .findByIdAndDeletedFalse(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Course offering not found"
-                        )
+                .orElseThrow(
+                        () ->
+                                new ResourceNotFoundException(
+                                        "Course offering not found"
+                                )
                 );
     }
 
     private void validateDateRange(
-            java.time.LocalDate startDate,
-            java.time.LocalDate endDate
+            LocalDate startDate,
+            LocalDate endDate
     ) {
         if (endDate.isBefore(startDate)) {
             throw new IllegalArgumentException(

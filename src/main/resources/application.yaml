@@ -17,8 +17,8 @@ spring:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
-  cache:
-    type: redis
+#  cache:
+#    type: redis
 #    cache-names:
 #      - student-by-id
 #      - department-by-id
@@ -27,16 +27,45 @@ spring:
 #      - course-offering-by-id
 #      - external-user-by-id
 #      - external-users-page
+#app:
+#  cache:
+#    default-ttl: 10m
+#    student-ttl: 10m
+#    department-ttl: 30m
+#    course-ttl: 20m
+#    instructor-ttl: 15m
+#    course-offering-ttl: 5m
+#    external-user-ttl: 5m
+#    external-users-page-ttl: 2m
 app:
   cache:
-    default-ttl: 10m
-    student-ttl: 10m
-    department-ttl: 30m
-    course-ttl: 20m
-    instructor-ttl: 15m
-    course-offering-ttl: 5m
-    external-user-ttl: 5m
-    external-users-page-ttl: 2m
+    student:
+      key-prefix: "student-management:v1:student:"
+      ttl: 10m
+    department:
+      key-prefix: "student-management:v1:department:"
+      ttl: 30m
+    course:
+      key-prefix: "student-management:v1:course:"
+      ttl: 20m
+    instructor:
+      key-prefix: "student-management:v1:instructor:"
+      ttl: 15m
+    course-offering:
+      key-prefix: "student-management:v1:course-offering:"
+      ttl: 5m
+    external-user:
+      key-prefix: "student-management:v1:external:user:"
+      ttl: 5m
+    external-post:
+      key-prefix: "student-management:v1:external:post:"
+      ttl: 5m
+    external-comment:
+      key-prefix: "student-management:v1:external:comment:"
+      ttl: 5m
+    external-album:
+      key-prefix: "student-management:v1:external:album:"
+      ttl: 5m
 server:
   port: 8080
 security:

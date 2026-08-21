@@ -1,5 +1,6 @@
 package com.acleda.training.studentmanagement.features.course;
 
+import com.acleda.training.studentmanagement.config.CacheProperties;
 import com.acleda.training.studentmanagement.exception.ConflictException;
 import com.acleda.training.studentmanagement.exception.ResourceNotFoundException;
 import com.acleda.training.studentmanagement.features.course.dto.CourseResponse;
@@ -8,16 +9,19 @@ import com.acleda.training.studentmanagement.features.course.dto.UpdateCourseReq
 import com.acleda.training.studentmanagement.features.department.Department;
 import com.acleda.training.studentmanagement.features.department.DepartmentRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.CachePut;
-import org.springframework.cache.annotation.Cacheable;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CourseServiceImpl
@@ -25,13 +29,12 @@ public class CourseServiceImpl
     private final CourseRepository courseRepository;
     private final CourseMapper courseMapper;
     private final DepartmentRepository departmentRepository;
+    private final StringRedisTemplate redisTemplate;
+    private final ObjectMapper objectMapper;
+    private final CacheProperties cacheProperties;
 
     @Override
     @Transactional
-    @CachePut(
-            cacheNames = CourseCacheNames.BY_ID,
-            key = "#result.id()"
-    )
     public CourseResponse createCourse(
             CreateCourseRequest request
     ) {
@@ -45,7 +48,9 @@ public class CourseServiceImpl
         Course course =
                 courseMapper.toEntity(request);
         course.setCode(
-                request.code().trim().toUpperCase()
+                request.code()
+                        .trim()
+                        .toUpperCase()
         );
         course.setName(
                 request.name().trim()
@@ -80,26 +85,27 @@ public class CourseServiceImpl
 
     @Override
     @Transactional(readOnly = true)
-    @Cacheable(
-            cacheNames = CourseCacheNames.BY_ID,
-            key = "#courseId"
-    )
     public CourseResponse getCourseById(
             UUID courseId
     ) {
+        CourseResponse cachedCourse =
+                getCourseFromCache(courseId);
+        if (cachedCourse != null) {
+            return cachedCourse;
+        }
         Course course =
                 findCourse(courseId);
-        return courseMapper.toResponse(
-                course
+        CourseResponse response =
+                courseMapper.toResponse(course);
+        cacheCourse(
+                courseId,
+                response
         );
+        return response;
     }
 
     @Override
     @Transactional
-    @CachePut(
-            cacheNames = CourseCacheNames.BY_ID,
-            key = "#courseId"
-    )
     public CourseResponse updateCourse(
             UUID courseId,
             UpdateCourseRequest request
@@ -131,6 +137,7 @@ public class CourseServiceImpl
         );
         Course updatedCourse =
                 courseRepository.save(course);
+        evictCourseCache(courseId);
         return courseMapper.toResponse(
                 updatedCourse
         );
@@ -138,10 +145,6 @@ public class CourseServiceImpl
 
     @Override
     @Transactional
-    @CacheEvict(
-            cacheNames = CourseCacheNames.BY_ID,
-            key = "#courseId"
-    )
     public void deleteCourse(
             UUID courseId
     ) {
@@ -149,6 +152,125 @@ public class CourseServiceImpl
                 findCourse(courseId);
         course.setDeleted(true);
         courseRepository.save(course);
+        evictCourseCache(courseId);
+    }
+
+    private CourseResponse getCourseFromCache(
+            UUID courseId
+    ) {
+        String key =
+                buildCacheKey(courseId);
+        try {
+            String json =
+                    redisTemplate
+                            .opsForValue()
+                            .get(key);
+            if (json == null) {
+                log.info(
+                        "Course cache MISS - key={}",
+                        key
+                );
+                return null;
+            }
+            CourseResponse response =
+                    objectMapper.readValue(
+                            json,
+                            CourseResponse.class
+                    );
+            log.info(
+                    "Course cache HIT - key={}",
+                    key
+            );
+            return response;
+        } catch (JacksonException e) {
+            log.warn(
+                    "Invalid Course cache value - key={}",
+                    key,
+                    e
+            );
+            evictCourseCache(courseId);
+            return null;
+        } catch (DataAccessException e) {
+            log.warn(
+                    "Redis unavailable while reading Course - key={}",
+                    key,
+                    e
+            );
+            return null;
+        }
+    }
+
+    private void cacheCourse(
+            UUID courseId,
+            CourseResponse response
+    ) {
+        String key =
+                buildCacheKey(courseId);
+        try {
+            String json =
+                    objectMapper.writeValueAsString(
+                            response
+                    );
+            redisTemplate
+                    .opsForValue()
+                    .set(
+                            key,
+                            json,
+                            cacheProperties
+                                    .course()
+                                    .ttl()
+                    );
+            log.info(
+                    "Course cache SET - key={}, ttl={}",
+                    key,
+                    cacheProperties
+                            .course()
+                            .ttl()
+            );
+        } catch (JacksonException e) {
+            log.warn(
+                    "Could not serialize Course for Redis - id={}",
+                    courseId,
+                    e
+            );
+        } catch (DataAccessException e) {
+            log.warn(
+                    "Redis unavailable while caching Course - key={}",
+                    key,
+                    e
+            );
+        }
+    }
+
+    private void evictCourseCache(
+            UUID courseId
+    ) {
+        String key =
+                buildCacheKey(courseId);
+        try {
+            Boolean deleted =
+                    redisTemplate.delete(key);
+            log.info(
+                    "Course cache DELETE - key={}, deleted={}",
+                    key,
+                    deleted
+            );
+        } catch (DataAccessException e) {
+            log.warn(
+                    "Redis unavailable while deleting Course cache - key={}",
+                    key,
+                    e
+            );
+        }
+    }
+
+    private String buildCacheKey(
+            UUID courseId
+    ) {
+        return cacheProperties
+                .course()
+                .keyPrefix()
+                + courseId;
     }
 
     private Course findCourse(
@@ -173,10 +295,11 @@ public class CourseServiceImpl
                         departmentId
                 )
                 .orElseThrow(
-                        () -> new ResourceNotFoundException(
-                                "Department not found with id: "
-                                        + departmentId
-                        )
+                        () ->
+                                new ResourceNotFoundException(
+                                        "Department not found with id: "
+                                                + departmentId
+                                )
                 );
     }
 

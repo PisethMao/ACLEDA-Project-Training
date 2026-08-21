@@ -1,27 +1,43 @@
 package com.acleda.training.studentmanagement.features.student;
 
+import com.acleda.training.studentmanagement.config.CacheProperties;
 import com.acleda.training.studentmanagement.exception.ConflictException;
 import com.acleda.training.studentmanagement.exception.ResourceNotFoundException;
 import com.acleda.training.studentmanagement.features.student.dto.StudentRequest;
 import com.acleda.training.studentmanagement.features.student.dto.StudentResponse;
 import com.acleda.training.studentmanagement.features.student.dto.StudentUpdateResult;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.CachePut;
-import org.springframework.cache.annotation.Cacheable;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.Objects;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class StudentServiceImpl implements StudentService {
     private final StudentRepository studentRepository;
     private final StudentMapper studentMapper;
+    private final StringRedisTemplate redisTemplate;
+    private final ObjectMapper objectMapper;
+    private final CacheProperties cacheProperties;
+
+    private String buildCacheKey(
+            UUID studentId
+    ) {
+        return cacheProperties
+                .student()
+                .keyPrefix()
+                + studentId;
+    }
 
     // Map the same field
 //    private void validateDuplicateForCreate(StudentRequest request) {
@@ -67,17 +83,19 @@ public class StudentServiceImpl implements StudentService {
 
     @Override
     @Transactional
-    @CachePut(
-            cacheNames = StudentCacheNames.BY_ID,
-            key = "#result.id()"
-    )
-    public StudentResponse createStudent(StudentRequest request) {
+    public StudentResponse createStudent(
+            StudentRequest request
+    ) {
         validateDuplicateForCreate(request);
-        Student student = studentMapper.toEntity(request);
+        Student student =
+                studentMapper.toEntity(request);
         student.setStatus(StudentStatus.ACTIVE);
         student.setDeleted(false);
-        Student savedStudent = studentRepository.saveAndFlush(student);
-        return studentMapper.toResponse(savedStudent);
+        Student savedStudent =
+                studentRepository.saveAndFlush(student);
+        return studentMapper.toResponse(
+                savedStudent
+        );
     }
 
     @Override
@@ -95,15 +113,112 @@ public class StudentServiceImpl implements StudentService {
                 ));
     }
 
+    private StudentResponse getStudentFromCache(
+            UUID studentId
+    ) {
+        String key =
+                buildCacheKey(studentId);
+        try {
+            String json =
+                    redisTemplate
+                            .opsForValue()
+                            .get(key);
+            if (json == null) {
+                log.info(
+                        "Student cache MISS - key={}",
+                        key
+                );
+                return null;
+            }
+            StudentResponse response =
+                    objectMapper.readValue(
+                            json,
+                            StudentResponse.class
+                    );
+            log.info(
+                    "Student cache HIT - key={}",
+                    key
+            );
+            return response;
+        } catch (JacksonException e) {
+            log.warn(
+                    "Invalid Student cache value - key={}",
+                    key,
+                    e
+            );
+            redisTemplate.delete(key);
+            return null;
+        } catch (DataAccessException e) {
+            log.warn(
+                    "Redis unavailable while reading Student - key={}",
+                    key,
+                    e
+            );
+            return null;
+        }
+    }
+
+    private void cacheStudent(
+            UUID studentId,
+            StudentResponse response
+    ) {
+        String key =
+                buildCacheKey(studentId);
+        try {
+            String json =
+                    objectMapper.writeValueAsString(
+                            response
+                    );
+            redisTemplate
+                    .opsForValue()
+                    .set(
+                            key,
+                            json,
+                            cacheProperties
+                                    .student()
+                                    .ttl()
+                    );
+            log.info(
+                    "Student cache SET - key={}, ttl={}",
+                    key,
+                    cacheProperties
+                            .student()
+                            .ttl()
+            );
+        } catch (JacksonException e) {
+            log.warn(
+                    "Could not serialize Student for Redis - id={}",
+                    studentId,
+                    e
+            );
+        } catch (DataAccessException e) {
+            log.warn(
+                    "Redis unavailable while caching Student - key={}",
+                    key,
+                    e
+            );
+        }
+    }
+
     @Override
     @Transactional(readOnly = true)
-    @Cacheable(
-            cacheNames = StudentCacheNames.BY_ID,
-            key = "#studentId"
-    )
-    public StudentResponse getStudentById(UUID studentId) {
-        Student student = findStudent(studentId);
-        return studentMapper.toResponse(student);
+    public StudentResponse getStudentById(
+            UUID studentId
+    ) {
+        StudentResponse cachedStudent =
+                getStudentFromCache(studentId);
+        if (cachedStudent != null) {
+            return cachedStudent;
+        }
+        Student student =
+                findStudent(studentId);
+        StudentResponse response =
+                studentMapper.toResponse(student);
+        cacheStudent(
+                studentId,
+                response
+        );
+        return response;
     }
 
     // Map the same field
@@ -160,10 +275,6 @@ public class StudentServiceImpl implements StudentService {
 
     @Override
     @Transactional
-    @CachePut(
-            cacheNames = StudentCacheNames.BY_ID,
-            key = "#studentId"
-    )
     public StudentUpdateResult updateStudent(
             UUID studentId,
             StudentRequest request
@@ -258,22 +369,47 @@ public class StudentServiceImpl implements StudentService {
         );
         Student updatedStudent =
                 studentRepository.saveAndFlush(student);
+        evictStudentCache(studentId);
         return new StudentUpdateResult(
                 studentMapper.toResponse(updatedStudent),
                 true
         );
     }
 
+    private void evictStudentCache(
+            UUID studentId
+    ) {
+        String key =
+                buildCacheKey(studentId);
+        try {
+            Boolean deleted =
+                    redisTemplate.delete(key);
+            log.info(
+                    "Student cache DELETE - key={}, deleted={}",
+                    key,
+                    deleted
+            );
+        } catch (DataAccessException e) {
+            log.warn(
+                    "Redis unavailable while deleting Student cache - key={}",
+                    key,
+                    e
+            );
+        }
+    }
+
     @Override
     @Transactional
-    @CacheEvict(
-            cacheNames = StudentCacheNames.BY_ID,
-            key = "#studentId"
-    )
-    public void deleteStudent(UUID studentId) {
-        Student student = findStudent(studentId);
+    public void deleteStudent(
+            UUID studentId
+    ) {
+        Student student =
+                findStudent(studentId);
         student.setDeleted(true);
-        student.setStatus(StudentStatus.INACTIVE);
-        studentRepository.save(student);
+        student.setStatus(
+                StudentStatus.INACTIVE
+        );
+        studentRepository.saveAndFlush(student);
+        evictStudentCache(studentId);
     }
 }
